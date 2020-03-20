@@ -1,9 +1,9 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'package:flutter/foundation.dart';
-import 'package:test/test.dart';
+import '../flutter_test_alternative.dart';
 
 void main() {
   test('LicenseEntryWithLineBreaks - most cases', () {
@@ -34,10 +34,10 @@ G
  H
  H]
 \u0020\u0020
-IJ
-K
+I\u000cJ
+\u000cK
 K
-
+\u000c
 L
 L L
 L  L
@@ -158,6 +158,7 @@ S
 
   test('LicenseEntryWithLineBreaks - leading and trailing whitespace', () {
     expect(const LicenseEntryWithLineBreaks(null, '    \n\n    ').paragraphs.toList(), isEmpty);
+    expect(const LicenseEntryWithLineBreaks(null, '    \r\n\r\n    ').paragraphs.toList(), isEmpty);
 
     List<LicenseParagraph> paragraphs;
 

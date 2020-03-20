@@ -1,5 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
+    "$comment": "This should be kept in sync with the validator in packages/flutter_tools/lib/src/flutter_manifest.dart",
     "title": "pubspec.yaml",
     "type": "object",
     "additionalProperties": true,
@@ -43,12 +44,64 @@
                         }
                     }
                 },
+                "module": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "androidX": { "type": "boolean" },
+                        "androidPackage": { "type": "string" },
+                        "iosBundleIdentifier": { "type": "string" }
+                    }
+                },
                 "plugin": {
                     "type": "object",
                     "additionalProperties": false,
                     "properties": {
+                        "platforms": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "android": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "package": {"type": "string"},
+                                        "pluginClass": {"type": "string"}
+                                    }
+                                },
+                                "ios": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "pluginClass": {"type": "string"}
+                                    }
+                                },
+                                "linux": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "pluginClass": {"type": "string"}
+                                    }
+                                },
+                                "macos": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "pluginClass": {"type": "string"}
+                                    }
+                                },
+                                "windows": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "pluginClass": {"type": "string"}
+                                    }
+                                }
+                            }
+                        },
                         "androidPackage": { "type": "string" },
                         "iosPrefix": { "type": "string" },
+                        "macosPrefix": { "type": "string" },
                         "pluginClass": { "type": "string" }
                     }
                 }

@@ -1,4 +1,4 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -14,11 +14,11 @@ void main() {
       log.add(message);
     };
     debugPrintBuildScope = true;
-    final AnimationController controller = new AnimationController(
+    final AnimationController controller = AnimationController(
       vsync: const TestVSync(),
       duration: const Duration(seconds: 2),
     );
-    await tester.pumpWidget(new FadeTransition(
+    await tester.pumpWidget(FadeTransition(
       opacity: controller,
       child: const Placeholder(),
     ));

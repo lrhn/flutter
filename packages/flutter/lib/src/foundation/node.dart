@@ -1,8 +1,12 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'package:meta/meta.dart';
+
+// This file gets mutated by //dev/devicelab/bin/tasks/flutter_test_performance.dart
+// during device lab performance tests. When editing this file, check to make sure
+// that it didn't break that test.
 
 /// An abstract node in a tree.
 ///
@@ -142,5 +146,4 @@ class AbstractNode {
     if (attached)
       child.detach();
   }
-
 }

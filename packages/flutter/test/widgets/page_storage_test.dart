@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,23 +7,23 @@ import 'package:flutter/material.dart';
 
 void main() {
   testWidgets('PageStorage read and write', (WidgetTester tester) async {
-    const Key builderKey = const PageStorageKey<String>('builderKey');
+    const Key builderKey = PageStorageKey<String>('builderKey');
     StateSetter setState;
     int storedValue = 0;
 
     await tester.pumpWidget(
-      new MaterialApp(
-        home: new StatefulBuilder(
+      MaterialApp(
+        home: StatefulBuilder(
           key: builderKey,
           builder: (BuildContext context, StateSetter setter) {
             PageStorage.of(context).writeState(context, storedValue);
             setState = setter;
-            return new Center(
-              child: new Text('storedValue: $storedValue')
+            return Center(
+              child: Text('storedValue: $storedValue'),
             );
-          }
-        )
-      )
+          },
+        ),
+      ),
     );
 
     final Element builderElement = tester.element(find.byKey(builderKey));
@@ -42,17 +42,17 @@ void main() {
     int storedValue = 0;
 
     Widget buildWidthKey(Key key) {
-      return new MaterialApp(
-        home: new StatefulBuilder(
+      return MaterialApp(
+        home: StatefulBuilder(
           key: key,
           builder: (BuildContext context, StateSetter setter) {
             PageStorage.of(context).writeState(context, storedValue, identifier: 123);
             setState = setter;
-            return new Center(
-              child: new Text('storedValue: $storedValue')
+            return Center(
+              child: Text('storedValue: $storedValue'),
             );
-          }
-        )
+          },
+        ),
       );
     }
 

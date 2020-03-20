@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -10,7 +10,7 @@ import 'package:flutter/services.dart';
 /// cannot be used in combination with other classes that do the same.
 class FeedbackTester {
   FeedbackTester() {
-    SystemChannels.platform.setMockMethodCallHandler((MethodCall methodCall) {
+    SystemChannels.platform.setMockMethodCallHandler((MethodCall methodCall) async {
       if (methodCall.method == 'HapticFeedback.vibrate')
         _hapticCount++;
       if (methodCall.method == 'SystemSound.play' &&

@@ -1,10 +1,11 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'package:flutter_driver/flutter_driver.dart';
 import 'package:image/image.dart';
-import 'package:test/test.dart';
+
+import 'package:test/test.dart' hide TypeMatcher, isInstanceOf;
 
 void main() {
   group('FlutterDriver', () {
@@ -21,7 +22,7 @@ void main() {
     test('should take screenshot', () async {
       final SerializableFinder toggleBtn = find.byValueKey('toggle');
       // Cards use a magic background color that we look for in the screenshots.
-      final Matcher cardsAreVisible = contains(0xff0201ff);
+      final Matcher cardsAreVisible = contains(getColor(0xff, 0x01, 0x02));
       await driver.waitFor(toggleBtn);
 
       bool cardsShouldBeVisible = false;
@@ -41,6 +42,6 @@ void main() {
 
         imageBefore = imageAfter;
       }
-    }, timeout: const Timeout(const Duration(minutes: 2)));
+    }, timeout: const Timeout(Duration(minutes: 2)));
   });
 }

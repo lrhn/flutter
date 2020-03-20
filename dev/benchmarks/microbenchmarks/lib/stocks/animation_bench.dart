@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -13,7 +13,7 @@ import 'package:stocks/stock_data.dart' as stock_data;
 
 import '../common.dart';
 
-const Duration kBenchmarkTime = const Duration(seconds: 15);
+const Duration kBenchmarkTime = Duration(seconds: 15);
 
 class BenchmarkingBinding extends LiveTestWidgetsFlutterBinding {
   BenchmarkingBinding(this.stopwatch);
@@ -33,13 +33,13 @@ class BenchmarkingBinding extends LiveTestWidgetsFlutterBinding {
   }
 }
 
-Future<Null> main() async {
-  assert(false); // don't run this in checked mode! Use --release.
+Future<void> main() async {
+  assert(false, "Don't run benchmarks in checked mode! Use 'flutter run --release'.");
   stock_data.StockData.actuallyFetchData = false;
 
-  final Stopwatch wallClockWatch = new Stopwatch();
-  final Stopwatch cpuWatch = new Stopwatch();
-  new BenchmarkingBinding(cpuWatch);
+  final Stopwatch wallClockWatch = Stopwatch();
+  final Stopwatch cpuWatch = Stopwatch();
+  BenchmarkingBinding(cpuWatch);
 
   int totalOpenFrameElapsedMicroseconds = 0;
   int totalOpenIterationCount = 0;
@@ -80,7 +80,7 @@ Future<Null> main() async {
     }
   });
 
-  final BenchmarkResultPrinter printer = new BenchmarkResultPrinter();
+  final BenchmarkResultPrinter printer = BenchmarkResultPrinter();
   printer.addResult(
     description: 'Stock animation',
     value: wallClockWatch.elapsedMicroseconds / (1000 * 1000),

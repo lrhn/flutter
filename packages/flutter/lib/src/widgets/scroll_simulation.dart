@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -34,7 +34,7 @@ class BouncingScrollSimulation extends Simulation {
     @required this.leadingExtent,
     @required this.trailingExtent,
     @required this.spring,
-    Tolerance tolerance: Tolerance.defaultTolerance,
+    Tolerance tolerance = Tolerance.defaultTolerance,
   }) : assert(position != null),
        assert(velocity != null),
        assert(leadingExtent != null),
@@ -49,7 +49,7 @@ class BouncingScrollSimulation extends Simulation {
       _springSimulation = _overscrollSimulation(position, velocity);
       _springTime = double.negativeInfinity;
     } else {
-      _frictionSimulation = new FrictionSimulation(0.135, position, velocity);
+      _frictionSimulation = FrictionSimulation(0.135, position, velocity);
       final double finalX = _frictionSimulation.finalX;
       if (velocity > 0.0 && finalX > trailingExtent) {
         _springTime = _frictionSimulation.timeAtX(trailingExtent);
@@ -93,11 +93,11 @@ class BouncingScrollSimulation extends Simulation {
   double _timeOffset = 0.0;
 
   Simulation _underscrollSimulation(double x, double dx) {
-    return new ScrollSpringSimulation(spring, x, leadingExtent, dx);
+    return ScrollSpringSimulation(spring, x, leadingExtent, dx);
   }
 
   Simulation _overscrollSimulation(double x, double dx) {
-    return new ScrollSpringSimulation(spring, x, trailingExtent, dx);
+    return ScrollSpringSimulation(spring, x, trailingExtent, dx);
   }
 
   Simulation _simulation(double time) {
@@ -123,7 +123,7 @@ class BouncingScrollSimulation extends Simulation {
 
   @override
   String toString() {
-    return '$runtimeType(leadingExtent: $leadingExtent, trailingExtent: $trailingExtent)';
+    return '${objectRuntimeType(this, 'BouncingScrollSimulation')}(leadingExtent: $leadingExtent, trailingExtent: $trailingExtent)';
   }
 }
 
@@ -143,8 +143,8 @@ class ClampingScrollSimulation extends Simulation {
   ClampingScrollSimulation({
     @required this.position,
     @required this.velocity,
-    this.friction: 0.015,
-    Tolerance tolerance: Tolerance.defaultTolerance,
+    this.friction = 0.015,
+    Tolerance tolerance = Tolerance.defaultTolerance,
   }) : assert(_flingVelocityPenetration(0.0) == _initialVelocityPenetration),
        super(tolerance: tolerance) {
     _duration = _flingDuration(velocity);
@@ -212,13 +212,13 @@ class ClampingScrollSimulation extends Simulation {
 
   @override
   double x(double time) {
-    final double t = (time / _duration).clamp(0.0, 1.0);
+    final double t = (time / _duration).clamp(0.0, 1.0) as double;
     return position + _distance * _flingDistancePenetration(t) * velocity.sign;
   }
 
   @override
   double dx(double time) {
-    final double t = (time / _duration).clamp(0.0, 1.0);
+    final double t = (time / _duration).clamp(0.0, 1.0) as double;
     return _distance * _flingVelocityPenetration(t) * velocity.sign / _duration;
   }
 

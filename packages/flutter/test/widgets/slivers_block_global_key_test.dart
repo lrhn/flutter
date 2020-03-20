@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -9,33 +9,33 @@ import 'package:flutter/widgets.dart';
 int globalGeneration = 0;
 
 class GenerationText extends StatefulWidget {
-  const GenerationText(this.value);
+  const GenerationText(this.value, { Key key }) : super(key: key);
   final int value;
   @override
-  _GenerationTextState createState() => new _GenerationTextState();
+  _GenerationTextState createState() => _GenerationTextState();
 }
 
 class _GenerationTextState extends State<GenerationText> {
   _GenerationTextState() : generation = globalGeneration;
   final int generation;
   @override
-  Widget build(BuildContext context) => new Text('${widget.value}:$generation ', textDirection: TextDirection.ltr);
+  Widget build(BuildContext context) => Text('${widget.value}:$generation ', textDirection: TextDirection.ltr);
 }
 
 // Creates a SliverList with `keys.length` children and each child having a key from `keys` and a text of `key:generation`.
 // The generation is increased with every call to this method.
-Future<Null> test(WidgetTester tester, double offset, List<int> keys) {
+Future<void> test(WidgetTester tester, double offset, List<int> keys) {
   globalGeneration += 1;
   return tester.pumpWidget(
-    new Directionality(
+    Directionality(
       textDirection: TextDirection.ltr,
-      child: new Viewport(
+      child: Viewport(
         cacheExtent: 0.0,
-        offset: new ViewportOffset.fixed(offset),
+        offset: ViewportOffset.fixed(offset),
         slivers: <Widget>[
-          new SliverList(
-            delegate: new SliverChildListDelegate(keys.map((int key) {
-              return new SizedBox(key: new GlobalObjectKey(key), height: 100.0, child: new GenerationText(key));
+          SliverList(
+            delegate: SliverChildListDelegate(keys.map<Widget>((int key) {
+              return SizedBox(key: GlobalObjectKey(key), height: 100.0, child: GenerationText(key));
             }).toList()),
           ),
         ],

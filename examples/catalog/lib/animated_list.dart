@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,11 +7,11 @@ import 'package:flutter/material.dart';
 
 class AnimatedListSample extends StatefulWidget {
   @override
-  _AnimatedListSampleState createState() => new _AnimatedListSampleState();
+  _AnimatedListSampleState createState() => _AnimatedListSampleState();
 }
 
 class _AnimatedListSampleState extends State<AnimatedListSample> {
-  final GlobalKey<AnimatedListState> _listKey = new GlobalKey<AnimatedListState>();
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
   ListModel<int> _list;
   int _selectedItem;
   int _nextItem; // The next item inserted when the user presses the '+' button.
@@ -19,7 +19,7 @@ class _AnimatedListSampleState extends State<AnimatedListSample> {
   @override
   void initState() {
     super.initState();
-    _list = new ListModel<int>(
+    _list = ListModel<int>(
       listKey: _listKey,
       initialItems: <int>[0, 1, 2],
       removedItemBuilder: _buildRemovedItem,
@@ -29,7 +29,7 @@ class _AnimatedListSampleState extends State<AnimatedListSample> {
 
   // Used to build list items that haven't been removed.
   Widget _buildItem(BuildContext context, int index, Animation<double> animation) {
-    return new CardItem(
+    return CardItem(
       animation: animation,
       item: _list[index],
       selected: _selectedItem == _list[index],
@@ -47,7 +47,7 @@ class _AnimatedListSampleState extends State<AnimatedListSample> {
   // The widget will be used by the [AnimatedListState.removeItem] method's
   // [AnimatedListRemovedItemBuilder] parameter.
   Widget _buildRemovedItem(int item, BuildContext context, Animation<double> animation) {
-    return new CardItem(
+    return CardItem(
       animation: animation,
       item: item,
       selected: false,
@@ -73,26 +73,26 @@ class _AnimatedListSampleState extends State<AnimatedListSample> {
 
   @override
   Widget build(BuildContext context) {
-    return new MaterialApp(
-      home: new Scaffold(
-        appBar: new AppBar(
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
           title: const Text('AnimatedList'),
           actions: <Widget>[
-            new IconButton(
+            IconButton(
               icon: const Icon(Icons.add_circle),
               onPressed: _insert,
               tooltip: 'insert a new item',
             ),
-            new IconButton(
+            IconButton(
               icon: const Icon(Icons.remove_circle),
               onPressed: _remove,
               tooltip: 'remove the selected item',
             ),
           ],
         ),
-        body: new Padding(
+        body: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: new AnimatedList(
+          child: AnimatedList(
             key: _listKey,
             initialItemCount: _list.length,
             itemBuilder: _buildItem,
@@ -119,10 +119,10 @@ class ListModel<E> {
     Iterable<E> initialItems,
   }) : assert(listKey != null),
        assert(removedItemBuilder != null),
-       _items = new List<E>.from(initialItems ?? <E>[]);
+       _items = initialItems?.toList() ?? <E>[];
 
   final GlobalKey<AnimatedListState> listKey;
-  final dynamic removedItemBuilder;
+  final Widget Function(E item, BuildContext context, Animation<double> animation) removedItemBuilder;
   final List<E> _items;
 
   AnimatedListState get _animatedList => listKey.currentState;
@@ -157,7 +157,7 @@ class CardItem extends StatelessWidget {
     @required this.animation,
     this.onTap,
     @required this.item,
-    this.selected: false
+    this.selected = false,
   }) : assert(animation != null),
        assert(item != null && item >= 0),
        assert(selected != null),
@@ -170,23 +170,23 @@ class CardItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TextStyle textStyle = Theme.of(context).textTheme.display1;
+    TextStyle textStyle = Theme.of(context).textTheme.headline4;
     if (selected)
       textStyle = textStyle.copyWith(color: Colors.lightGreenAccent[400]);
-    return new Padding(
+    return Padding(
       padding: const EdgeInsets.all(2.0),
-      child: new SizeTransition(
+      child: SizeTransition(
         axis: Axis.vertical,
         sizeFactor: animation,
-        child: new GestureDetector(
+        child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: onTap,
-          child: new SizedBox(
+          child: SizedBox(
             height: 128.0,
-            child: new Card(
+            child: Card(
               color: Colors.primaries[item % Colors.primaries.length],
-              child: new Center(
-                child: new Text('Item $item', style: textStyle),
+              child: Center(
+                child: Text('Item $item', style: textStyle),
               ),
             ),
           ),
@@ -197,7 +197,7 @@ class CardItem extends StatelessWidget {
 }
 
 void main() {
-  runApp(new AnimatedListSample());
+  runApp(AnimatedListSample());
 }
 
 /*

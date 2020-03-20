@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter_devicelab/framework/ios.dart';
 import 'package:path/path.dart' as path;
 
 import '../framework/adb.dart';
@@ -14,54 +13,57 @@ import '../framework/framework.dart';
 import '../framework/utils.dart';
 
 final Directory _editedFlutterGalleryDir = dir(path.join(Directory.systemTemp.path, 'edited_flutter_gallery'));
-final Directory flutterGalleryDir = dir(path.join(flutterDirectory.path, 'examples/flutter_gallery'));
+final Directory flutterGalleryDir = dir(path.join(flutterDirectory.path, 'dev/integration_tests/flutter_gallery'));
 
-TaskFunction createHotModeTest({ bool isPreviewDart2: true }) {
+TaskFunction createHotModeTest({String deviceIdOverride, Map<String, String> environment}) {
   return () async {
-    final Device device = await devices.workingDevice;
-    await device.unlock();
+    if (deviceIdOverride == null) {
+      final Device device = await devices.workingDevice;
+      await device.unlock();
+      deviceIdOverride = device.deviceId;
+    }
     final File benchmarkFile = file(path.join(_editedFlutterGalleryDir.path, 'hot_benchmark.json'));
     rm(benchmarkFile);
     final List<String> options = <String>[
-      '--hot', '-d', device.deviceId, '--benchmark', '--verbose', '--resident'
+      '--hot', '-d', deviceIdOverride, '--benchmark', '--verbose', '--resident', '--output-dill', path.join('build', 'app.dill')
     ];
-    if (isPreviewDart2)
-      options.add('--preview-dart-2');
-    else
-      options.add('--no-preview-dart-2');
-    setLocalEngineOptionIfNecessary(options);
     int hotReloadCount = 0;
     Map<String, dynamic> twoReloadsData;
     Map<String, dynamic> freshRestartReloadsData;
-    await inDirectory(flutterDirectory, () async {
+    await inDirectory<void>(flutterDirectory, () async {
       rmTree(_editedFlutterGalleryDir);
       mkdirs(_editedFlutterGalleryDir);
       recursiveCopy(flutterGalleryDir, _editedFlutterGalleryDir);
-      await inDirectory(_editedFlutterGalleryDir, () async {
-        if (deviceOperatingSystem == DeviceOperatingSystem.ios)
-          await prepareProvisioningCertificates(_editedFlutterGalleryDir.path);
+      await inDirectory<void>(_editedFlutterGalleryDir, () async {
         {
+          final Process clearProcess = await startProcess(
+              path.join(flutterDirectory.path, 'bin', 'flutter'),
+              flutterCommandArgs('clean', <String>[]),
+              environment: environment,
+          );
+          await clearProcess.exitCode;
+
           final Process process = await startProcess(
               path.join(flutterDirectory.path, 'bin', 'flutter'),
-              <String>['run']..addAll(options),
-              environment: null
+              flutterCommandArgs('run', options),
+              environment: environment,
           );
 
-          final Completer<Null> stdoutDone = new Completer<Null>();
-          final Completer<Null> stderrDone = new Completer<Null>();
+          final Completer<void> stdoutDone = Completer<void>();
+          final Completer<void> stderrDone = Completer<void>();
           process.stdout
-              .transform(utf8.decoder)
-              .transform(const LineSplitter())
+              .transform<String>(utf8.decoder)
+              .transform<String>(const LineSplitter())
               .listen((String line) {
-            if (line.contains('\] Reloaded ')) {
+            if (line.contains('] Reloaded ')) {
               if (hotReloadCount == 0) {
                 // Update the file and reload again.
                 final File appDartSource = file(path.join(
-                    _editedFlutterGalleryDir.path, 'lib/gallery/app.dart'
+                    _editedFlutterGalleryDir.path, 'lib/gallery/app.dart',
                 ));
                 appDartSource.writeAsStringSync(
                     appDartSource.readAsStringSync().replaceFirst(
-                        "'Flutter Gallery'", "'Updated Flutter Gallery'"
+                        "'Flutter Gallery'", "'Updated Flutter Gallery'",
                     )
                 );
                 process.stdin.writeln('r');
@@ -76,37 +78,37 @@ TaskFunction createHotModeTest({ bool isPreviewDart2: true }) {
             stdoutDone.complete();
           });
           process.stderr
-              .transform(utf8.decoder)
-              .transform(const LineSplitter())
+              .transform<String>(utf8.decoder)
+              .transform<String>(const LineSplitter())
               .listen((String line) {
             print('stderr: $line');
           }, onDone: () {
             stderrDone.complete();
           });
 
-          await Future.wait<Null>(
-              <Future<Null>>[stdoutDone.future, stderrDone.future]);
+          await Future.wait<void>(
+              <Future<void>>[stdoutDone.future, stderrDone.future]);
           await process.exitCode;
 
-          twoReloadsData = json.decode(benchmarkFile.readAsStringSync());
+          twoReloadsData = json.decode(benchmarkFile.readAsStringSync()) as Map<String, dynamic>;
         }
         benchmarkFile.deleteSync();
 
-        // start `flutter run` again to make sure it loads from the previous state
-        // (in case of --preview-dart-2 frontend loads up from previously generated kernel files).
+        // Start `flutter run` again to make sure it loads from the previous
+        // state. Frontend loads up from previously generated kernel files.
         {
           final Process process = await startProcess(
               path.join(flutterDirectory.path, 'bin', 'flutter'),
-              <String>['run']..addAll(options),
-              environment: null
+              flutterCommandArgs('run', options),
+              environment: environment,
           );
-          final Completer<Null> stdoutDone = new Completer<Null>();
-          final Completer<Null> stderrDone = new Completer<Null>();
+          final Completer<void> stdoutDone = Completer<void>();
+          final Completer<void> stderrDone = Completer<void>();
           process.stdout
-              .transform(utf8.decoder)
-              .transform(const LineSplitter())
+              .transform<String>(utf8.decoder)
+              .transform<String>(const LineSplitter())
               .listen((String line) {
-            if (line.contains('\] Reloaded ')) {
+            if (line.contains('] Reloaded ')) {
               process.stdin.writeln('q');
             }
             print('stdout: $line');
@@ -114,27 +116,27 @@ TaskFunction createHotModeTest({ bool isPreviewDart2: true }) {
             stdoutDone.complete();
           });
           process.stderr
-              .transform(utf8.decoder)
-              .transform(const LineSplitter())
+              .transform<String>(utf8.decoder)
+              .transform<String>(const LineSplitter())
               .listen((String line) {
             print('stderr: $line');
           }, onDone: () {
             stderrDone.complete();
           });
 
-          await Future.wait<Null>(
-              <Future<Null>>[stdoutDone.future, stderrDone.future]);
+          await Future.wait<void>(
+              <Future<void>>[stdoutDone.future, stderrDone.future]);
           await process.exitCode;
 
           freshRestartReloadsData =
-              json.decode(benchmarkFile.readAsStringSync());
+              json.decode(benchmarkFile.readAsStringSync()) as Map<String, dynamic>;
         }
       });
     });
 
 
 
-    return new TaskResult.success(
+    return TaskResult.success(
       <String, dynamic> {
         'hotReloadInitialDevFSSyncMilliseconds': twoReloadsData['hotReloadInitialDevFSSyncMilliseconds'][0],
         'hotRestartMillisecondsToFrame': twoReloadsData['hotRestartMillisecondsToFrame'][0],
@@ -160,7 +162,7 @@ TaskFunction createHotModeTest({ bool isPreviewDart2: true }) {
         'hotReloadFlutterReassembleMillisecondsAfterChange',
         'hotReloadVMReloadMillisecondsAfterChange',
         'hotReloadInitialDevFSSyncAfterRelaunchMilliseconds',
-      ]
+      ],
     );
   };
 }

@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -23,23 +23,23 @@ class TestScrollBehavior extends ScrollBehavior {
 
 void main() {
   testWidgets('Inherited ScrollConfiguration changed', (WidgetTester tester) async {
-    final GlobalKey key = new GlobalKey(debugLabel: 'scrollable');
+    final GlobalKey key = GlobalKey(debugLabel: 'scrollable');
     TestScrollBehavior behavior;
     ScrollPositionWithSingleContext position;
 
-    final Widget scrollView = new SingleChildScrollView(
+    final Widget scrollView = SingleChildScrollView(
       key: key,
-      child: new Builder(
+      child: Builder(
         builder: (BuildContext context) {
-          behavior = ScrollConfiguration.of(context);
-          position = Scrollable.of(context).position;
-          return new Container(height: 1000.0);
+          behavior = ScrollConfiguration.of(context) as TestScrollBehavior;
+          position = Scrollable.of(context).position as ScrollPositionWithSingleContext;
+          return Container(height: 1000.0);
         },
       ),
     );
 
     await tester.pumpWidget(
-      new ScrollConfiguration(
+      ScrollConfiguration(
         behavior: const TestScrollBehavior(true),
         child: scrollView,
       ),
@@ -47,14 +47,14 @@ void main() {
 
     expect(behavior, isNotNull);
     expect(behavior.flag, isTrue);
-    expect(position.physics, const isInstanceOf<ClampingScrollPhysics>());
+    expect(position.physics, isA<ClampingScrollPhysics>());
     ScrollMetrics metrics = position.copyWith();
     expect(metrics.extentAfter, equals(400.0));
     expect(metrics.viewportDimension, equals(600.0));
 
     // Same Scrollable, different ScrollConfiguration
     await tester.pumpWidget(
-      new ScrollConfiguration(
+      ScrollConfiguration(
         behavior: const TestScrollBehavior(false),
         child: scrollView,
       ),
@@ -62,7 +62,7 @@ void main() {
 
     expect(behavior, isNotNull);
     expect(behavior.flag, isFalse);
-    expect(position.physics, const isInstanceOf<BouncingScrollPhysics>());
+    expect(position.physics, isA<BouncingScrollPhysics>());
     // Regression test for https://github.com/flutter/flutter/issues/5856
     metrics = position.copyWith();
     expect(metrics.extentAfter, equals(400.0));

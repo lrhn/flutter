@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -15,7 +15,7 @@ void main() {
     await WidgetsBinding.instance.reassembleApplication();
     return log;
   });
-  runApp(new MaterialApp(home: const Test()));
+  runApp(const MaterialApp(home: Test()));
 }
 
 class Test extends SingleChildRenderObjectWidget {
@@ -23,7 +23,7 @@ class Test extends SingleChildRenderObjectWidget {
 
   @override
   RenderTest createRenderObject(BuildContext context) {
-    return new RenderTest();
+    return RenderTest();
   }
 }
 

@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -9,6 +9,9 @@ import 'platform_channel.dart';
 
 /// Platform channels used by the Flutter system.
 class SystemChannels {
+  // This class is not meant to be instatiated or extended; this constructor
+  // prevents instantiation and extension.
+  // ignore: unused_element
   SystemChannels._();
 
   /// A JSON [MethodChannel] for navigation.
@@ -22,14 +25,29 @@ class SystemChannels {
   ///  * `pushRoute`, which is called with a single string argument when the
   ///    operating system instructs the application to open a particular page.
   ///
+  /// The following methods are used for the opposite direction data flow. The
+  /// framework notifies the engine about the route changes.
+  ///
+  ///  * `routePushed`, which is called when a route is pushed. (e.g. A modal
+  ///    replaces the entire screen.)
+  ///
+  ///  * `routePopped`, which is called when a route is popped. (e.g. A dialog,
+  ///    such as time picker is closed.)
+  ///
+  ///  * `routeReplaced`, which is called when a route is replaced.
+  ///
   /// See also:
   ///
   ///  * [WidgetsBindingObserver.didPopRoute] and
   ///    [WidgetsBindingObserver.didPushRoute], which expose this channel's
   ///    methods.
-  static const MethodChannel navigation = const MethodChannel(
+  ///  * [Navigator] which manages transitions from one page to another.
+  ///    [Navigator.push], [Navigator.pushReplacement], [Navigator.pop] and
+  ///    [Navigator.replace], utilize this channel's methods to send route
+  ///    change information from framework to engine.
+  static const MethodChannel navigation = MethodChannel(
       'flutter/navigation',
-      const JSONMethodCodec(),
+      JSONMethodCodec(),
   );
 
   /// A JSON [MethodChannel] for invoking miscellaneous platform methods.
@@ -84,9 +102,9 @@ class SystemChannels {
   ///
   /// Calls to methods that are not implemented on the shell side are ignored
   /// (so it is safe to call methods when the relevant plugin might be missing).
-  static const MethodChannel platform = const OptionalMethodChannel(
+  static const MethodChannel platform = OptionalMethodChannel(
       'flutter/platform',
-      const JSONMethodCodec(),
+      JSONMethodCodec(),
   );
 
   /// A JSON [MethodChannel] for handling text input.
@@ -141,11 +159,26 @@ class SystemChannels {
   ///    second argument is a [String] consisting of the stringification of one
   ///    of the values of the [TextInputAction] enum.
   ///
+  ///  * `TextInputClient.requestExistingInputState`: The embedding may have
+  ///    lost its internal state about the current editing client, if there is
+  ///    one. The framework should call `TextInput.setClient` and
+  ///    `TextInput.setEditingState` again with its most recent information. If
+  ///    there is no existing state on the framework side, the call should
+  ///    fizzle.
+  ///
+  ///  * `TextInputClient.onConnectionClosed`: The text input connection closed
+  ///    on the platform side. For example the application is moved to
+  ///    background or used closed the virtual keyboard. This method informs
+  ///    [TextInputClient] to clear connection and finalize editing.
+  ///    `TextInput.clearClient` and `TextInput.hide` is not called after
+  ///    clearing the connection since on the platform side the connection is
+  ///    already finalized.
+  ///
   /// Calls to methods that are not implemented on the shell side are ignored
   /// (so it is safe to call methods when the relevant plugin might be missing).
-  static const MethodChannel textInput = const OptionalMethodChannel(
+  static const MethodChannel textInput = OptionalMethodChannel(
       'flutter/textinput',
-      const JSONMethodCodec(),
+      JSONMethodCodec(),
   );
 
   /// A JSON [BasicMessageChannel] for keyboard events.
@@ -168,9 +201,9 @@ class SystemChannels {
   ///  * [RawKeyboard], which uses this channel to expose key data.
   ///  * [new RawKeyEvent.fromMessage], which can decode this data into the [RawKeyEvent]
   ///    subclasses mentioned above.
-  static const BasicMessageChannel<dynamic> keyEvent = const BasicMessageChannel<dynamic>(
+  static const BasicMessageChannel<dynamic> keyEvent = BasicMessageChannel<dynamic>(
       'flutter/keyevent',
-      const JSONMessageCodec(),
+      JSONMessageCodec(),
   );
 
   /// A string [BasicMessageChannel] for lifecycle events.
@@ -183,9 +216,9 @@ class SystemChannels {
   ///
   ///  * [WidgetsBindingObserver.didChangeAppLifecycleState], which triggers
   ///    whenever a message is received on this channel.
-  static const BasicMessageChannel<String> lifecycle = const BasicMessageChannel<String>(
+  static const BasicMessageChannel<String> lifecycle = BasicMessageChannel<String>(
       'flutter/lifecycle',
-      const StringCodec(),
+      StringCodec(),
   );
 
   /// A JSON [BasicMessageChannel] for system events.
@@ -199,21 +232,42 @@ class SystemChannels {
   ///    applications to release caches to free up more memory. See
   ///    [WidgetsBindingObserver.didHaveMemoryPressure], which triggers whenever
   ///    a message is received on this channel.
-  static const BasicMessageChannel<dynamic> system = const BasicMessageChannel<dynamic>(
+  static const BasicMessageChannel<dynamic> system = BasicMessageChannel<dynamic>(
       'flutter/system',
-      const JSONMessageCodec(),
+      JSONMessageCodec(),
   );
 
   /// A [BasicMessageChannel] for accessibility events.
   ///
   /// See also:
   ///
-  /// * [SemanticsEvent] and its subclasses for a list of valid accessibility
-  ///   events that can be sent over this channel.
-  /// * [SemanticsNode.sendEvent], which uses this channel to dispatch events.
-  static const BasicMessageChannel<dynamic> accessibility = const BasicMessageChannel<dynamic>(
+  ///  * [SemanticsEvent] and its subclasses for a list of valid accessibility
+  ///    events that can be sent over this channel.
+  ///  * [SemanticsNode.sendEvent], which uses this channel to dispatch events.
+  static const BasicMessageChannel<dynamic> accessibility = BasicMessageChannel<dynamic>(
     'flutter/accessibility',
-    const StandardMessageCodec(),
+    StandardMessageCodec(),
   );
 
+  /// A [MethodChannel] for controlling platform views.
+  ///
+  /// See also:
+  ///
+  ///  * [PlatformViewsService] for the available operations on this channel.
+  static const MethodChannel platform_views = MethodChannel(
+    'flutter/platform_views',
+    StandardMethodCodec(),
+  );
+
+  /// A [MethodChannel] for configuring the Skia graphics library.
+  ///
+  /// The following outgoing methods are defined for this channel (invoked using
+  /// [OptionalMethodChannel.invokeMethod]):
+  ///
+  ///  * `Skia.setResourceCacheMaxBytes`: Set the maximum number of bytes that
+  ///    can be held in the GPU resource cache.
+  static const MethodChannel skia = MethodChannel(
+    'flutter/skia',
+    JSONMethodCodec(),
+  );
 }

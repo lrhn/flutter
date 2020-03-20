@@ -1,4 +1,4 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,10 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 
 void main() {
-  testWidgets('builder doesn\'t get called if app doesn\'t change', (WidgetTester tester) async {
+  testWidgets("builder doesn't get called if app doesn't change", (WidgetTester tester) async {
     final List<String> log = <String>[];
-    final Widget app = new MaterialApp(
-      theme: new ThemeData(
+    final Widget app = MaterialApp(
+      theme: ThemeData(
         primarySwatch: Colors.green,
       ),
       home: const Placeholder(),
@@ -17,19 +17,19 @@ void main() {
         log.add('build');
         expect(Theme.of(context).primaryColor, Colors.green);
         expect(Directionality.of(context), TextDirection.ltr);
-        expect(child, const isInstanceOf<Navigator>());
+        expect(child, isA<Navigator>());
         return const Placeholder();
       },
     );
     await tester.pumpWidget(
-      new Directionality(
+      Directionality(
         textDirection: TextDirection.rtl,
         child: app,
       ),
     );
     expect(log, <String>['build']);
     await tester.pumpWidget(
-      new Directionality(
+      Directionality(
         textDirection: TextDirection.ltr,
         child: app,
       ),
@@ -37,14 +37,14 @@ void main() {
     expect(log, <String>['build']);
   });
 
-  testWidgets('builder doesn\'t get called if app doesn\'t change', (WidgetTester tester) async {
+  testWidgets("builder doesn't get called if app doesn't change", (WidgetTester tester) async {
     final List<String> log = <String>[];
     await tester.pumpWidget(
-      new MaterialApp(
-        theme: new ThemeData(
+      MaterialApp(
+        theme: ThemeData(
           primarySwatch: Colors.yellow,
         ),
-        home: new Builder(
+        home: Builder(
           builder: (BuildContext context) {
             log.add('build');
             expect(Theme.of(context).primaryColor, Colors.yellow);
@@ -53,7 +53,7 @@ void main() {
           },
         ),
         builder: (BuildContext context, Widget child) {
-          return new Directionality(
+          return Directionality(
             textDirection: TextDirection.rtl,
             child: child,
           );

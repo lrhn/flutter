@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -21,14 +21,14 @@ class PrimaryScrollController extends InheritedWidget {
   const PrimaryScrollController({
     Key key,
     @required this.controller,
-    @required Widget child
+    @required Widget child,
   }) : assert(controller != null),
        super(key: key, child: child);
 
   /// Creates a subtree without an associated [ScrollController].
   const PrimaryScrollController.none({
     Key key,
-    @required Widget child
+    @required Widget child,
   }) : controller = null,
        super(key: key, child: child);
 
@@ -46,7 +46,7 @@ class PrimaryScrollController extends InheritedWidget {
   /// Returns null if there is no [ScrollController] associated with the given
   /// context.
   static ScrollController of(BuildContext context) {
-    final PrimaryScrollController result = context.inheritFromWidgetOfExactType(PrimaryScrollController);
+    final PrimaryScrollController result = context.dependOnInheritedWidgetOfExactType<PrimaryScrollController>();
     return result?.controller;
   }
 
@@ -56,6 +56,6 @@ class PrimaryScrollController extends InheritedWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(new DiagnosticsProperty<ScrollController>('controller', controller, ifNull: 'no controller', showName: false));
+    properties.add(DiagnosticsProperty<ScrollController>('controller', controller, ifNull: 'no controller', showName: false));
   }
 }

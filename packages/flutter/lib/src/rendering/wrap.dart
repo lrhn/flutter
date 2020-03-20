@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -109,14 +109,14 @@ class RenderWrap extends RenderBox with ContainerRenderObjectMixin<RenderBox, Wr
   /// runs are aligned to the start.
   RenderWrap({
     List<RenderBox> children,
-    Axis direction: Axis.horizontal,
-    WrapAlignment alignment: WrapAlignment.start,
-    double spacing: 0.0,
-    WrapAlignment runAlignment: WrapAlignment.start,
-    double runSpacing: 0.0,
-    WrapCrossAlignment crossAxisAlignment: WrapCrossAlignment.start,
+    Axis direction = Axis.horizontal,
+    WrapAlignment alignment = WrapAlignment.start,
+    double spacing = 0.0,
+    WrapAlignment runAlignment = WrapAlignment.start,
+    double runSpacing = 0.0,
+    WrapCrossAlignment crossAxisAlignment = WrapCrossAlignment.start,
     TextDirection textDirection,
-    VerticalDirection verticalDirection: VerticalDirection.down,
+    VerticalDirection verticalDirection = VerticalDirection.down,
   }) : assert(direction != null),
        assert(alignment != null),
        assert(spacing != null),
@@ -150,7 +150,7 @@ class RenderWrap extends RenderBox with ContainerRenderObjectMixin<RenderBox, Wr
     markNeedsLayout();
   }
 
-  /// How the children within a run should be places in the main axis.
+  /// How the children within a run should be placed in the main axis.
   ///
   /// For example, if [alignment] is [WrapAlignment.center], the children in
   /// each run are grouped together in the center of their run in the main axis.
@@ -378,7 +378,7 @@ class RenderWrap extends RenderBox with ContainerRenderObjectMixin<RenderBox, Wr
   @override
   void setupParentData(RenderBox child) {
     if (child.parentData is! WrapParentData)
-      child.parentData = new WrapParentData();
+      child.parentData = WrapParentData();
   }
 
   double _computeIntrinsicHeightForWidth(double width) {
@@ -541,9 +541,9 @@ class RenderWrap extends RenderBox with ContainerRenderObjectMixin<RenderBox, Wr
   Offset _getOffset(double mainAxisOffset, double crossAxisOffset) {
     switch (direction) {
       case Axis.horizontal:
-        return new Offset(mainAxisOffset, crossAxisOffset);
+        return Offset(mainAxisOffset, crossAxisOffset);
       case Axis.vertical:
-        return new Offset(crossAxisOffset, mainAxisOffset);
+        return Offset(crossAxisOffset, mainAxisOffset);
     }
     return Offset.zero;
   }
@@ -565,6 +565,7 @@ class RenderWrap extends RenderBox with ContainerRenderObjectMixin<RenderBox, Wr
 
   @override
   void performLayout() {
+    final BoxConstraints constraints = this.constraints;
     assert(_debugHasNecessaryDirections);
     _hasVisualOverflow = false;
     RenderBox child = firstChild;
@@ -578,7 +579,7 @@ class RenderWrap extends RenderBox with ContainerRenderObjectMixin<RenderBox, Wr
     bool flipCrossAxis = false;
     switch (direction) {
       case Axis.horizontal:
-        childConstraints = new BoxConstraints(maxWidth: constraints.maxWidth);
+        childConstraints = BoxConstraints(maxWidth: constraints.maxWidth);
         mainAxisLimit = constraints.maxWidth;
         if (textDirection == TextDirection.rtl)
           flipMainAxis = true;
@@ -586,7 +587,7 @@ class RenderWrap extends RenderBox with ContainerRenderObjectMixin<RenderBox, Wr
           flipCrossAxis = true;
         break;
       case Axis.vertical:
-        childConstraints = new BoxConstraints(maxHeight: constraints.maxHeight);
+        childConstraints = BoxConstraints(maxHeight: constraints.maxHeight);
         mainAxisLimit = constraints.maxHeight;
         if (verticalDirection == VerticalDirection.up)
           flipMainAxis = true;
@@ -613,7 +614,7 @@ class RenderWrap extends RenderBox with ContainerRenderObjectMixin<RenderBox, Wr
         crossAxisExtent += runCrossAxisExtent;
         if (runMetrics.isNotEmpty)
           crossAxisExtent += runSpacing;
-        runMetrics.add(new _RunMetrics(runMainAxisExtent, runCrossAxisExtent, childCount));
+        runMetrics.add(_RunMetrics(runMainAxisExtent, runCrossAxisExtent, childCount));
         runMainAxisExtent = 0.0;
         runCrossAxisExtent = 0.0;
         childCount = 0;
@@ -623,7 +624,7 @@ class RenderWrap extends RenderBox with ContainerRenderObjectMixin<RenderBox, Wr
         runMainAxisExtent += spacing;
       runCrossAxisExtent = math.max(runCrossAxisExtent, childCrossAxisExtent);
       childCount += 1;
-      final WrapParentData childParentData = child.parentData;
+      final WrapParentData childParentData = child.parentData as WrapParentData;
       childParentData._runIndex = runMetrics.length;
       child = childParentData.nextSibling;
     }
@@ -632,7 +633,7 @@ class RenderWrap extends RenderBox with ContainerRenderObjectMixin<RenderBox, Wr
       crossAxisExtent += runCrossAxisExtent;
       if (runMetrics.isNotEmpty)
         crossAxisExtent += runSpacing;
-      runMetrics.add(new _RunMetrics(runMainAxisExtent, runCrossAxisExtent, childCount));
+      runMetrics.add(_RunMetrics(runMainAxisExtent, runCrossAxisExtent, childCount));
     }
 
     final int runCount = runMetrics.length;
@@ -643,12 +644,12 @@ class RenderWrap extends RenderBox with ContainerRenderObjectMixin<RenderBox, Wr
 
     switch (direction) {
       case Axis.horizontal:
-        size = constraints.constrain(new Size(mainAxisExtent, crossAxisExtent));
+        size = constraints.constrain(Size(mainAxisExtent, crossAxisExtent));
         containerMainAxisExtent = size.width;
         containerCrossAxisExtent = size.height;
         break;
       case Axis.vertical:
-        size = constraints.constrain(new Size(crossAxisExtent, mainAxisExtent));
+        size = constraints.constrain(Size(crossAxisExtent, mainAxisExtent));
         containerMainAxisExtent = size.height;
         containerCrossAxisExtent = size.width;
         break;
@@ -724,7 +725,7 @@ class RenderWrap extends RenderBox with ContainerRenderObjectMixin<RenderBox, Wr
         crossAxisOffset -= runCrossAxisExtent;
 
       while (child != null) {
-        final WrapParentData childParentData = child.parentData;
+        final WrapParentData childParentData = child.parentData as WrapParentData;
         if (childParentData._runIndex != i)
           break;
         final double childMainAxisExtent = _getMainAxisExtent(child);
@@ -748,7 +749,7 @@ class RenderWrap extends RenderBox with ContainerRenderObjectMixin<RenderBox, Wr
   }
 
   @override
-  bool hitTestChildren(HitTestResult result, { Offset position }) {
+  bool hitTestChildren(BoxHitTestResult result, { Offset position }) {
     return defaultHitTestChildren(result, position: position);
   }
 
@@ -765,13 +766,13 @@ class RenderWrap extends RenderBox with ContainerRenderObjectMixin<RenderBox, Wr
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(new EnumProperty<Axis>('direction', direction));
-    properties.add(new EnumProperty<WrapAlignment>('alignment', alignment));
-    properties.add(new DoubleProperty('spacing', spacing));
-    properties.add(new EnumProperty<WrapAlignment>('runAlignment', runAlignment));
-    properties.add(new DoubleProperty('runSpacing', runSpacing));
-    properties.add(new DoubleProperty('crossAxisAlignment', runSpacing));
-    properties.add(new EnumProperty<TextDirection>('textDirection', textDirection, defaultValue: null));
-    properties.add(new EnumProperty<VerticalDirection>('verticalDirection', verticalDirection, defaultValue: VerticalDirection.down));
+    properties.add(EnumProperty<Axis>('direction', direction));
+    properties.add(EnumProperty<WrapAlignment>('alignment', alignment));
+    properties.add(DoubleProperty('spacing', spacing));
+    properties.add(EnumProperty<WrapAlignment>('runAlignment', runAlignment));
+    properties.add(DoubleProperty('runSpacing', runSpacing));
+    properties.add(DoubleProperty('crossAxisAlignment', runSpacing));
+    properties.add(EnumProperty<TextDirection>('textDirection', textDirection, defaultValue: null));
+    properties.add(EnumProperty<VerticalDirection>('verticalDirection', verticalDirection, defaultValue: VerticalDirection.down));
   }
 }

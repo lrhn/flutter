@@ -1,15 +1,30 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:ui' as ui show TextHeightBehavior;
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/painting.dart';
 
 import 'basic.dart';
 import 'framework.dart';
+import 'inherited_theme.dart';
 import 'media_query.dart';
 
-/// The text style to apply to descendant [Text] widgets without explicit style.
-class DefaultTextStyle extends InheritedWidget {
+// Examples can assume:
+// String _name;
+
+/// The text style to apply to descendant [Text] widgets which don't have an
+/// explicit style.
+///
+/// See also:
+///
+///  * [AnimatedDefaultTextStyle], which animates changes in the text style
+///    smoothly over a given duration.
+///  * [DefaultTextStyleTransition], which takes a provided [Animation] to
+///    animate changes in text style smoothly over time.
+class DefaultTextStyle extends InheritedTheme {
   /// Creates a default text style for the given subtree.
   ///
   /// Consider using [DefaultTextStyle.merge] to inherit styling information
@@ -26,15 +41,18 @@ class DefaultTextStyle extends InheritedWidget {
     Key key,
     @required this.style,
     this.textAlign,
-    this.softWrap: true,
-    this.overflow: TextOverflow.clip,
+    this.softWrap = true,
+    this.overflow = TextOverflow.clip,
     this.maxLines,
+    this.textWidthBasis = TextWidthBasis.parent,
+    this.textHeightBehavior,
     @required Widget child,
   }) : assert(style != null),
        assert(softWrap != null),
        assert(overflow != null),
        assert(maxLines == null || maxLines > 0),
        assert(child != null),
+       assert(textWidthBasis != null),
        super(key: key, child: child);
 
   /// A const-constructible default text style that provides fallback values.
@@ -43,12 +61,15 @@ class DefaultTextStyle extends InheritedWidget {
   ///
   /// This constructor creates a [DefaultTextStyle] that lacks a [child], which
   /// means the constructed value cannot be incorporated into the tree.
-  const DefaultTextStyle.fallback()
+  const DefaultTextStyle.fallback({ Key key })
     : style = const TextStyle(),
       textAlign = null,
       softWrap = true,
       maxLines = null,
-      overflow = TextOverflow.clip;
+      overflow = TextOverflow.clip,
+      textWidthBasis = TextWidthBasis.parent,
+      textHeightBehavior = null,
+      super(key: key, child: null);
 
   /// Creates a default text style that overrides the text styles in scope at
   /// this point in the widget tree.
@@ -73,19 +94,21 @@ class DefaultTextStyle extends InheritedWidget {
     bool softWrap,
     TextOverflow overflow,
     int maxLines,
+    TextWidthBasis textWidthBasis,
     @required Widget child,
   }) {
     assert(child != null);
-    return new Builder(
+    return Builder(
       builder: (BuildContext context) {
         final DefaultTextStyle parent = DefaultTextStyle.of(context);
-        return new DefaultTextStyle(
+        return DefaultTextStyle(
           key: key,
           style: parent.style.merge(style),
           textAlign: textAlign ?? parent.textAlign,
           softWrap: softWrap ?? parent.softWrap,
           overflow: overflow ?? parent.overflow,
           maxLines: maxLines ?? parent.maxLines,
+          textWidthBasis: textWidthBasis ?? parent.textWidthBasis,
           child: child,
         );
       },
@@ -117,6 +140,14 @@ class DefaultTextStyle extends InheritedWidget {
   /// [Text.maxLines].
   final int maxLines;
 
+  /// The strategy to use when calculating the width of the Text.
+  ///
+  /// See [TextWidthBasis] for possible values and their implications.
+  final TextWidthBasis textWidthBasis;
+
+  /// {@macro flutter.dart:ui.textHeightBehavior}
+  final ui.TextHeightBehavior textHeightBehavior;
+
   /// The closest instance of this class that encloses the given context.
   ///
   /// If no such instance exists, returns an instance created by
@@ -128,7 +159,7 @@ class DefaultTextStyle extends InheritedWidget {
   /// DefaultTextStyle style = DefaultTextStyle.of(context);
   /// ```
   static DefaultTextStyle of(BuildContext context) {
-    return context.inheritFromWidgetOfExactType(DefaultTextStyle) ?? const DefaultTextStyle.fallback();
+    return context.dependOnInheritedWidgetOfExactType<DefaultTextStyle>() ?? const DefaultTextStyle.fallback();
   }
 
   @override
@@ -137,17 +168,36 @@ class DefaultTextStyle extends InheritedWidget {
         textAlign != oldWidget.textAlign ||
         softWrap != oldWidget.softWrap ||
         overflow != oldWidget.overflow ||
-        maxLines != oldWidget.maxLines;
+        maxLines != oldWidget.maxLines ||
+        textWidthBasis != oldWidget.textWidthBasis ||
+        textHeightBehavior != oldWidget.textHeightBehavior;
+  }
+
+  @override
+  Widget wrap(BuildContext context, Widget child) {
+    final DefaultTextStyle defaultTextStyle = context.findAncestorWidgetOfExactType<DefaultTextStyle>();
+    return identical(this, defaultTextStyle) ? child : DefaultTextStyle(
+      style: style,
+      textAlign: textAlign,
+      softWrap: softWrap,
+      overflow: overflow,
+      maxLines: maxLines,
+      textWidthBasis: textWidthBasis,
+      textHeightBehavior: textHeightBehavior,
+      child: child,
+    );
   }
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     style?.debugFillProperties(properties);
-    properties.add(new EnumProperty<TextAlign>('textAlign', textAlign, defaultValue: null));
-    properties.add(new FlagProperty('softWrap', value: softWrap, ifTrue: 'wrapping at box width', ifFalse: 'no wrapping except at line break characters', showName: true));
-    properties.add(new EnumProperty<TextOverflow>('overflow', overflow, defaultValue: null));
-    properties.add(new IntProperty('maxLines', maxLines, defaultValue: null));
+    properties.add(EnumProperty<TextAlign>('textAlign', textAlign, defaultValue: null));
+    properties.add(FlagProperty('softWrap', value: softWrap, ifTrue: 'wrapping at box width', ifFalse: 'no wrapping except at line break characters', showName: true));
+    properties.add(EnumProperty<TextOverflow>('overflow', overflow, defaultValue: null));
+    properties.add(IntProperty('maxLines', maxLines, defaultValue: null));
+    properties.add(EnumProperty<TextWidthBasis>('textWidthBasis', textWidthBasis, defaultValue: TextWidthBasis.parent));
+    properties.add(DiagnosticsProperty<ui.TextHeightBehavior>('textHeightBehavior', textHeightBehavior, defaultValue: null));
   }
 }
 
@@ -159,25 +209,51 @@ class DefaultTextStyle extends InheritedWidget {
 ///
 /// The [style] argument is optional. When omitted, the text will use the style
 /// from the closest enclosing [DefaultTextStyle]. If the given style's
-/// [TextStyle.inherit] property is true, the given style will be merged with
-/// the closest enclosing [DefaultTextStyle]. This merging behavior is useful,
-/// for example, to make the text bold while using the default font family and
-/// size.
+/// [TextStyle.inherit] property is true (the default), the given style will
+/// be merged with the closest enclosing [DefaultTextStyle]. This merging
+/// behavior is useful, for example, to make the text bold while using the
+/// default font family and size.
 ///
-/// Using the [new TextSpan.rich] constructor, the [Text] widget can also be
-/// created with a [TextSpan] to display text that use multiple styles
-/// (e.g., a paragraph with some bold words).
+/// {@tool snippet}
 ///
-/// ## Sample code
+/// This example shows how to display text using the [Text] widget with the
+/// [overflow] set to [TextOverflow.ellipsis].
+///
+/// ![If the text is shorter than the available space, it is displayed in full without an ellipsis.](https://flutter.github.io/assets-for-api-docs/assets/widgets/text.png)
+///
+/// ![If the text overflows, the Text widget displays an ellipsis to trim the overflowing text](https://flutter.github.io/assets-for-api-docs/assets/widgets/text_ellipsis.png)
 ///
 /// ```dart
-/// new Text(
+/// Text(
 ///   'Hello, $_name! How are you?',
 ///   textAlign: TextAlign.center,
 ///   overflow: TextOverflow.ellipsis,
-///   style: new TextStyle(fontWeight: FontWeight.bold),
+///   style: TextStyle(fontWeight: FontWeight.bold),
 /// )
 /// ```
+/// {@end-tool}
+///
+/// Using the [Text.rich] constructor, the [Text] widget can
+/// display a paragraph with differently styled [TextSpan]s. The sample
+/// that follows displays "Hello beautiful world" with different styles
+/// for each word.
+///
+/// {@tool snippet}
+///
+/// ![The word "Hello" is shown with the default text styles. The word "beautiful" is italicized. The word "world" is bold.](https://flutter.github.io/assets-for-api-docs/assets/widgets/text_rich.png)
+///
+/// ```dart
+/// const Text.rich(
+///   TextSpan(
+///     text: 'Hello', // default text style
+///     children: <TextSpan>[
+///       TextSpan(text: ' beautiful ', style: TextStyle(fontStyle: FontStyle.italic)),
+///       TextSpan(text: 'world', style: TextStyle(fontWeight: FontWeight.bold)),
+///     ],
+///   ),
+/// )
+/// ```
+/// {@end-tool}
 ///
 /// ## Interactivity
 ///
@@ -201,42 +277,71 @@ class Text extends StatelessWidget {
   ///
   /// If the [style] argument is null, the text will use the style from the
   /// closest enclosing [DefaultTextStyle].
-  const Text(this.data, {
+  ///
+  /// The [data] parameter must not be null.
+  const Text(
+    this.data, {
     Key key,
     this.style,
+    this.strutStyle,
     this.textAlign,
     this.textDirection,
+    this.locale,
     this.softWrap,
     this.overflow,
     this.textScaleFactor,
     this.maxLines,
-  }) : assert(data != null),
+    this.semanticsLabel,
+    this.textWidthBasis,
+    this.textHeightBehavior,
+  }) : assert(
+         data != null,
+         'A non-null String must be provided to a Text widget.',
+       ),
        textSpan = null,
        super(key: key);
 
-  /// Creates a text widget with a [TextSpan].
-  const Text.rich(this.textSpan, {
+  /// Creates a text widget with a [InlineSpan].
+  ///
+  /// The following subclasses of [InlineSpan] may be used to build rich text:
+  ///
+  /// * [TextSpan]s define text and children [InlineSpan]s.
+  /// * [WidgetSpan]s define embedded inline widgets.
+  ///
+  /// The [textSpan] parameter must not be null.
+  ///
+  /// See [RichText] which provides a lower-level way to draw text.
+  const Text.rich(
+    this.textSpan, {
     Key key,
     this.style,
+    this.strutStyle,
     this.textAlign,
     this.textDirection,
+    this.locale,
     this.softWrap,
     this.overflow,
     this.textScaleFactor,
     this.maxLines,
-  }): assert(textSpan != null),
-      data = null,
-      super(key: key);
+    this.semanticsLabel,
+    this.textWidthBasis,
+    this.textHeightBehavior,
+  }) : assert(
+         textSpan != null,
+         'A non-null TextSpan must be provided to a Text.rich widget.',
+       ),
+       data = null,
+       super(key: key);
 
   /// The text to display.
   ///
   /// This will be null if a [textSpan] is provided instead.
   final String data;
 
-  /// The text to display as a [TextSpan].
+  /// The text to display as a [InlineSpan].
   ///
   /// This will be null if [data] is provided instead.
-  final TextSpan textSpan;
+  final InlineSpan textSpan;
 
   /// If non-null, the style to use for this text.
   ///
@@ -244,6 +349,9 @@ class Text extends StatelessWidget {
   /// the closest enclosing [DefaultTextStyle]. Otherwise, the style will
   /// replace the closest enclosing [DefaultTextStyle].
   final TextStyle style;
+
+  /// {@macro flutter.painting.textPainter.strutStyle}
+  final StrutStyle strutStyle;
 
   /// How the text should be aligned horizontally.
   final TextAlign textAlign;
@@ -262,6 +370,15 @@ class Text extends StatelessWidget {
   ///
   /// Defaults to the ambient [Directionality], if any.
   final TextDirection textDirection;
+
+  /// Used to select a font when the same Unicode character can
+  /// be rendered differently, depending on the locale.
+  ///
+  /// It's rarely necessary to set this property. By default its value
+  /// is inherited from the enclosing app with `Localizations.localeOf(context)`.
+  ///
+  /// See [RenderParagraph.locale] for more information.
+  final Locale locale;
 
   /// Whether the text should break at soft line breaks.
   ///
@@ -294,40 +411,82 @@ class Text extends StatelessWidget {
   /// widget directly to entirely override the [DefaultTextStyle].
   final int maxLines;
 
+  /// An alternative semantics label for this text.
+  ///
+  /// If present, the semantics of this widget will contain this value instead
+  /// of the actual text. This will overwrite any of the semantics labels applied
+  /// directly to the [TextSpan]s.
+  ///
+  /// This is useful for replacing abbreviations or shorthands with the full
+  /// text value:
+  ///
+  /// ```dart
+  /// Text(r'$$', semanticsLabel: 'Double dollars')
+  /// ```
+  final String semanticsLabel;
+
+  /// {@macro flutter.painting.textPainter.textWidthBasis}
+  final TextWidthBasis textWidthBasis;
+
+  /// {@macro flutter.dart:ui.textHeightBehavior}
+  final ui.TextHeightBehavior textHeightBehavior;
+
   @override
   Widget build(BuildContext context) {
     final DefaultTextStyle defaultTextStyle = DefaultTextStyle.of(context);
     TextStyle effectiveTextStyle = style;
     if (style == null || style.inherit)
       effectiveTextStyle = defaultTextStyle.style.merge(style);
-    return new RichText(
+    if (MediaQuery.boldTextOverride(context))
+      effectiveTextStyle = effectiveTextStyle.merge(const TextStyle(fontWeight: FontWeight.bold));
+    Widget result = RichText(
       textAlign: textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start,
       textDirection: textDirection, // RichText uses Directionality.of to obtain a default if this is null.
+      locale: locale, // RichText uses Localizations.localeOf to obtain a default if this is null
       softWrap: softWrap ?? defaultTextStyle.softWrap,
       overflow: overflow ?? defaultTextStyle.overflow,
       textScaleFactor: textScaleFactor ?? MediaQuery.textScaleFactorOf(context),
       maxLines: maxLines ?? defaultTextStyle.maxLines,
-      text: new TextSpan(
+      strutStyle: strutStyle,
+      textWidthBasis: textWidthBasis ?? defaultTextStyle.textWidthBasis,
+      textHeightBehavior: textHeightBehavior ?? defaultTextStyle.textHeightBehavior,
+      text: TextSpan(
         style: effectiveTextStyle,
         text: data,
-        children: textSpan != null ? <TextSpan>[textSpan] : null,
+        children: textSpan != null ? <InlineSpan>[textSpan] : null,
       ),
     );
+    if (semanticsLabel != null) {
+      result = Semantics(
+        textDirection: textDirection,
+        label: semanticsLabel,
+        child: ExcludeSemantics(
+          child: result,
+        ),
+      );
+    }
+    return result;
   }
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(new StringProperty('data', data, showName: false));
+    properties.add(StringProperty('data', data, showName: false));
     if (textSpan != null) {
       properties.add(textSpan.toDiagnosticsNode(name: 'textSpan', style: DiagnosticsTreeStyle.transition));
     }
     style?.debugFillProperties(properties);
-    properties.add(new EnumProperty<TextAlign>('textAlign', textAlign, defaultValue: null));
-    properties.add(new EnumProperty<TextDirection>('textDirection', textDirection, defaultValue: null));
-    properties.add(new FlagProperty('softWrap', value: softWrap, ifTrue: 'wrapping at box width', ifFalse: 'no wrapping except at line break characters', showName: true));
-    properties.add(new EnumProperty<TextOverflow>('overflow', overflow, defaultValue: null));
-    properties.add(new DoubleProperty('textScaleFactor', textScaleFactor, defaultValue: null));
-    properties.add(new IntProperty('maxLines', maxLines, defaultValue: null));
+    properties.add(EnumProperty<TextAlign>('textAlign', textAlign, defaultValue: null));
+    properties.add(EnumProperty<TextDirection>('textDirection', textDirection, defaultValue: null));
+    properties.add(DiagnosticsProperty<Locale>('locale', locale, defaultValue: null));
+    properties.add(FlagProperty('softWrap', value: softWrap, ifTrue: 'wrapping at box width', ifFalse: 'no wrapping except at line break characters', showName: true));
+    properties.add(EnumProperty<TextOverflow>('overflow', overflow, defaultValue: null));
+    properties.add(DoubleProperty('textScaleFactor', textScaleFactor, defaultValue: null));
+    properties.add(IntProperty('maxLines', maxLines, defaultValue: null));
+    properties.add(EnumProperty<TextWidthBasis>('textWidthBasis', textWidthBasis, defaultValue: null));
+    properties.add(DiagnosticsProperty<ui.TextHeightBehavior>('textHeightBehavior', textHeightBehavior, defaultValue: null));
+    if (semanticsLabel != null) {
+      properties.add(StringProperty('semanticsLabel', semanticsLabel));
+    }
   }
 }

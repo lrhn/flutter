@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,22 +7,20 @@ import 'package:flutter/painting.dart';
 
 void main() {
   // Here and below, see: https://github.com/dart-lang/sdk/issues/26980
-  // ignore: prefer_const_constructors
-  final FlutterLogoDecoration start = new FlutterLogoDecoration(
-    lightColor: const Color(0xFF000000),
-    darkColor: const Color(0xFFFFFFFF),
-    textColor: const Color(0xFFD4F144),
+  const FlutterLogoDecoration start = FlutterLogoDecoration(
+    lightColor: Color(0xFF000000),
+    darkColor: Color(0xFFFFFFFF),
+    textColor: Color(0xFFD4F144),
     style: FlutterLogoStyle.stacked,
-    margin: const EdgeInsets.all(10.0),
+    margin: EdgeInsets.all(10.0),
   );
 
-  // ignore: prefer_const_constructors
-  final FlutterLogoDecoration end = new FlutterLogoDecoration(
-    lightColor: const Color(0xFFFFFFFF),
-    darkColor: const Color(0xFF000000),
-    textColor: const Color(0xFF81D4FA),
+  const FlutterLogoDecoration end = FlutterLogoDecoration(
+    lightColor: Color(0xFFFFFFFF),
+    darkColor: Color(0xFF000000),
+    textColor: Color(0xFF81D4FA),
     style: FlutterLogoStyle.stacked,
-    margin: const EdgeInsets.all(10.0),
+    margin: EdgeInsets.all(10.0),
   );
 
   test('FlutterLogoDecoration lerp from null to null is null', () {

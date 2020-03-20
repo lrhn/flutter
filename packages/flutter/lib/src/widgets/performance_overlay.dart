@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -29,18 +29,19 @@ class PerformanceOverlay extends LeafRenderObjectWidget {
   /// [PerformanceOverlayOption] to enable.
   const PerformanceOverlay({
     Key key,
-    this.optionsMask: 0,
-    this.rasterizerThreshold: 0,
-    this.checkerboardRasterCacheImages: false,
-    this.checkerboardOffscreenLayers: false,
+    this.optionsMask = 0,
+    this.rasterizerThreshold = 0,
+    this.checkerboardRasterCacheImages = false,
+    this.checkerboardOffscreenLayers = false,
   }) : super(key: key);
 
   /// Create a performance overlay that displays all available statistics
-  PerformanceOverlay.allEnabled({ Key key,
-                                  this.rasterizerThreshold: 0,
-                                  this.checkerboardRasterCacheImages: false,
-                                  this.checkerboardOffscreenLayers: false })
-    : optionsMask =
+  PerformanceOverlay.allEnabled({
+    Key key,
+    this.rasterizerThreshold = 0,
+    this.checkerboardRasterCacheImages = false,
+    this.checkerboardOffscreenLayers = false,
+  }) : optionsMask =
         1 << PerformanceOverlayOption.displayRasterizerStatistics.index |
         1 << PerformanceOverlayOption.visualizeRasterizerStatistics.index |
         1 << PerformanceOverlayOption.displayEngineStatistics.index |
@@ -103,7 +104,7 @@ class PerformanceOverlay extends LeafRenderObjectWidget {
   final bool checkerboardOffscreenLayers;
 
   @override
-  RenderPerformanceOverlay createRenderObject(BuildContext context) => new RenderPerformanceOverlay(
+  RenderPerformanceOverlay createRenderObject(BuildContext context) => RenderPerformanceOverlay(
     optionsMask: optionsMask,
     rasterizerThreshold: rasterizerThreshold,
     checkerboardRasterCacheImages: checkerboardRasterCacheImages,

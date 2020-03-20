@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -76,8 +76,9 @@ class RenderAnimatedSize extends RenderAligningShiftedBox {
   RenderAnimatedSize({
     @required TickerProvider vsync,
     @required Duration duration,
-    Curve curve: Curves.linear,
-    AlignmentGeometry alignment: Alignment.center,
+    Duration reverseDuration,
+    Curve curve = Curves.linear,
+    AlignmentGeometry alignment = Alignment.center,
     TextDirection textDirection,
     RenderBox child,
   }) : assert(vsync != null),
@@ -85,22 +86,23 @@ class RenderAnimatedSize extends RenderAligningShiftedBox {
        assert(curve != null),
        _vsync = vsync,
        super(child: child, alignment: alignment, textDirection: textDirection) {
-    _controller = new AnimationController(
+    _controller = AnimationController(
       vsync: vsync,
       duration: duration,
+      reverseDuration: reverseDuration,
     )..addListener(() {
       if (_controller.value != _lastValue)
         markNeedsLayout();
     });
-    _animation = new CurvedAnimation(
+    _animation = CurvedAnimation(
       parent: _controller,
-      curve: curve
+      curve: curve,
     );
   }
 
   AnimationController _controller;
   CurvedAnimation _animation;
-  final SizeTween _sizeTween = new SizeTween();
+  final SizeTween _sizeTween = SizeTween();
   bool _hasVisualOverflow;
   double _lastValue;
 
@@ -118,6 +120,14 @@ class RenderAnimatedSize extends RenderAligningShiftedBox {
     if (value == _controller.duration)
       return;
     _controller.duration = value;
+  }
+
+  /// The duration of the animation when running in reverse.
+  Duration get reverseDuration => _controller.reverseDuration;
+  set reverseDuration(Duration value) {
+    if (value == _controller.reverseDuration)
+      return;
+    _controller.reverseDuration = value;
   }
 
   /// The curve of the animation.
@@ -160,7 +170,7 @@ class RenderAnimatedSize extends RenderAligningShiftedBox {
   void performLayout() {
     _lastValue = _controller.value;
     _hasVisualOverflow = false;
-
+    final BoxConstraints constraints = this.constraints;
     if (child == null || constraints.isTight) {
       _controller.stop();
       size = _sizeTween.begin = _sizeTween.end = constraints.smallest;

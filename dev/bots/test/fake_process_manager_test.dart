@@ -1,11 +1,11 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:test/test.dart';
+import 'common.dart';
 
 import 'fake_process_manager.dart';
 
@@ -19,7 +19,7 @@ void main() {
     }
 
     setUp(() async {
-      processManager = new FakeProcessManager(stdinResults: _captureStdin);
+      processManager = FakeProcessManager(stdinResults: _captureStdin);
     });
 
     tearDown(() async {});
@@ -27,14 +27,14 @@ void main() {
     test('start works', () async {
       final Map<String, List<ProcessResult>> calls = <String, List<ProcessResult>>{
         'gsutil acl get gs://flutter_infra/releases/releases.json': <ProcessResult>[
-          new ProcessResult(0, 0, 'output1', '')
+          ProcessResult(0, 0, 'output1', ''),
         ],
         'gsutil cat gs://flutter_infra/releases/releases.json': <ProcessResult>[
-          new ProcessResult(0, 0, 'output2', '')
+          ProcessResult(0, 0, 'output2', ''),
         ],
       };
       processManager.fakeResults = calls;
-      for (String key in calls.keys) {
+      for (final String key in calls.keys) {
         final Process process = await processManager.start(key.split(' '));
         String output = '';
         process.stdout.listen((List<int> item) {
@@ -49,14 +49,14 @@ void main() {
     test('run works', () async {
       final Map<String, List<ProcessResult>> calls = <String, List<ProcessResult>>{
         'gsutil acl get gs://flutter_infra/releases/releases.json': <ProcessResult>[
-          new ProcessResult(0, 0, 'output1', '')
+          ProcessResult(0, 0, 'output1', ''),
         ],
         'gsutil cat gs://flutter_infra/releases/releases.json': <ProcessResult>[
-          new ProcessResult(0, 0, 'output2', '')
+          ProcessResult(0, 0, 'output2', ''),
         ],
       };
       processManager.fakeResults = calls;
-      for (String key in calls.keys) {
+      for (final String key in calls.keys) {
         final ProcessResult result = await processManager.run(key.split(' '));
         expect(result.stdout, equals(calls[key][0].stdout));
       }
@@ -66,14 +66,14 @@ void main() {
     test('runSync works', () async {
       final Map<String, List<ProcessResult>> calls = <String, List<ProcessResult>>{
         'gsutil acl get gs://flutter_infra/releases/releases.json': <ProcessResult>[
-          new ProcessResult(0, 0, 'output1', '')
+          ProcessResult(0, 0, 'output1', ''),
         ],
         'gsutil cat gs://flutter_infra/releases/releases.json': <ProcessResult>[
-          new ProcessResult(0, 0, 'output2', '')
+          ProcessResult(0, 0, 'output2', ''),
         ],
       };
       processManager.fakeResults = calls;
-      for (String key in calls.keys) {
+      for (final String key in calls.keys) {
         final ProcessResult result = processManager.runSync(key.split(' '));
         expect(result.stdout, equals(calls[key][0].stdout));
       }
@@ -83,14 +83,14 @@ void main() {
     test('captures stdin', () async {
       final Map<String, List<ProcessResult>> calls = <String, List<ProcessResult>>{
         'gsutil acl get gs://flutter_infra/releases/releases.json': <ProcessResult>[
-          new ProcessResult(0, 0, 'output1', '')
+          ProcessResult(0, 0, 'output1', ''),
         ],
         'gsutil cat gs://flutter_infra/releases/releases.json': <ProcessResult>[
-          new ProcessResult(0, 0, 'output2', '')
+          ProcessResult(0, 0, 'output2', ''),
         ],
       };
       processManager.fakeResults = calls;
-      for (String key in calls.keys) {
+      for (final String key in calls.keys) {
         final Process process = await processManager.start(key.split(' '));
         String output = '';
         process.stdout.listen((List<int> item) {

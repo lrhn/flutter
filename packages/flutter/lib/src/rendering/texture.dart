@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -30,13 +30,15 @@ import 'object.dart';
 ///
 /// See also:
 ///
-/// * <https://docs.flutter.io/javadoc/io/flutter/view/TextureRegistry.html>
-///   for how to create and manage backend textures on Android.
-/// * <https://docs.flutter.io/objcdoc/Protocols/FlutterTextureRegistry.html>
-///   for how to create and manage backend textures on iOS.
+///  * <https://api.flutter.dev/javadoc/io/flutter/view/TextureRegistry.html>
+///    for how to create and manage backend textures on Android.
+///  * <https://api.flutter.dev/objcdoc/Protocols/FlutterTextureRegistry.html>
+///    for how to create and manage backend textures on iOS.
 class TextureBox extends RenderBox {
   /// Creates a box backed by the texture identified by [textureId].
-  TextureBox({ @required int textureId }) : assert(textureId != null), _textureId = textureId;
+  TextureBox({ @required int textureId })
+    : assert(textureId != null),
+      _textureId = textureId;
 
   /// The identity of the backend texture.
   int get textureId => _textureId;
@@ -64,16 +66,14 @@ class TextureBox extends RenderBox {
   }
 
   @override
-  bool hitTestSelf(Offset position) {
-    return true;
-  }
+  bool hitTestSelf(Offset position) => true;
 
   @override
   void paint(PaintingContext context, Offset offset) {
     if (_textureId == null)
       return;
-    context.addLayer(new TextureLayer(
-      rect: new Rect.fromLTWH(offset.dx, offset.dy, size.width, size.height),
+    context.addLayer(TextureLayer(
+      rect: Rect.fromLTWH(offset.dx, offset.dy, size.width, size.height),
       textureId: _textureId,
     ));
   }

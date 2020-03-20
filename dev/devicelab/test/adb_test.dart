@@ -1,13 +1,14 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'dart:async';
 
-import 'package:test/test.dart';
 import 'package:collection/collection.dart' show ListEquality, MapEquality;
 
 import 'package:flutter_devicelab/framework/adb.dart';
+
+import 'common.dart';
 
 void main() {
   group('device', () {
@@ -16,7 +17,7 @@ void main() {
     setUp(() {
       FakeDevice.resetLog();
       device = null;
-      device = new FakeDevice();
+      device = FakeDevice();
     });
 
     tearDown(() {
@@ -93,6 +94,15 @@ void main() {
         ]);
       });
     });
+
+    group('adb', () {
+      test('tap', () async {
+        await device.tap(100, 200);
+        expectLog(<CommandArgs>[
+          cmd(command: 'input', arguments: <String>['tap', '100', '200']),
+        ]);
+      });
+    });
   });
 }
 
@@ -105,14 +115,14 @@ CommandArgs cmd({
   List<String> arguments,
   Map<String, String> environment,
 }) {
-  return new CommandArgs(
+  return CommandArgs(
     command: command,
     arguments: arguments,
     environment: environment,
   );
 }
 
-typedef dynamic ExitErrorFactory();
+typedef ExitErrorFactory = dynamic Function();
 
 class CommandArgs {
   CommandArgs({ this.command, this.arguments, this.environment });
@@ -128,11 +138,10 @@ class CommandArgs {
   bool operator==(Object other) {
     if (other.runtimeType != CommandArgs)
       return false;
-
-    final CommandArgs otherCmd = other;
-    return otherCmd.command == command &&
-      const ListEquality<String>().equals(otherCmd.arguments, arguments) &&
-      const MapEquality<String, String>().equals(otherCmd.environment, environment);
+    return other is CommandArgs
+        && other.command == command
+        && const ListEquality<String>().equals(other.arguments, arguments)
+        && const MapEquality<String, String>().equals(other.environment, environment);
   }
 
   @override
@@ -173,7 +182,7 @@ class FakeDevice extends AndroidDevice {
 
   @override
   Future<String> shellEval(String command, List<String> arguments, { Map<String, String> environment }) async {
-    commandLog.add(new CommandArgs(
+    commandLog.add(CommandArgs(
       command: command,
       arguments: arguments,
       environment: environment,
@@ -182,8 +191,8 @@ class FakeDevice extends AndroidDevice {
   }
 
   @override
-  Future<Null> shellExec(String command, List<String> arguments, { Map<String, String> environment }) async {
-    commandLog.add(new CommandArgs(
+  Future<void> shellExec(String command, List<String> arguments, { Map<String, String> environment }) async {
+    commandLog.add(CommandArgs(
       command: command,
       arguments: arguments,
       environment: environment,

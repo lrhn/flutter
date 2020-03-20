@@ -1,18 +1,25 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:ui';
+import 'basic_types.dart';
+import 'constants.dart';
 
-/// Whether we've been built in release mode.
-const bool _kReleaseMode = const bool.fromEnvironment('dart.vm.product');
-
-/// When running in profile mode (or debug mode), invoke the given function.
+/// DEPRECATED. `function` cannot be tree-shaken out of release builds.
 ///
-/// In release mode, the function is not invoked.
-// TODO(devoncarew): Going forward, we'll want the call to profile() to be tree-shaken out.
+/// Instead use:
+///
+/// ```dart
+/// if (!kReleaseMode) {
+///   function();
+/// }
+/// ```
+@Deprecated(
+  'Use `if (!kReleaseMode) { function(); }` instead. '
+  'This feature was deprecated after v1.3.9.'
+)
 void profile(VoidCallback function) {
-  if (_kReleaseMode)
+  if (kReleaseMode)
     return;
   function();
 }

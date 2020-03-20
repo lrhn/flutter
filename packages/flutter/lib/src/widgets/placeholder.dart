@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -18,12 +18,12 @@ class _PlaceholderPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint paint = new Paint()
+    final Paint paint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
     final Rect rect = Offset.zero & size;
-    final Path path = new Path()
+    final Path path = Path()
       ..addRect(rect)
       ..addPolygon(<Offset>[rect.topRight, rect.bottomLeft], false)
       ..addPolygon(<Offset>[rect.topLeft, rect.bottomRight], false);
@@ -49,14 +49,16 @@ class _PlaceholderPainter extends CustomPainter {
 /// By default, the placeholder is sized to fit its container. If the
 /// placeholder is in an unbounded space, it will size itself according to the
 /// given [fallbackWidth] and [fallbackHeight].
+///
+/// {@youtube 560 315 https://www.youtube.com/watch?v=LPe56fezmoo}
 class Placeholder extends StatelessWidget {
   /// Creates a widget which draws a box.
   const Placeholder({
     Key key,
-    this.color: const Color(0xFF455A64), // Blue Grey 700
-    this.strokeWidth: 2.0,
-    this.fallbackWidth: 400.0,
-    this.fallbackHeight: 400.0,
+    this.color = const Color(0xFF455A64), // Blue Grey 700
+    this.strokeWidth = 2.0,
+    this.fallbackWidth = 400.0,
+    this.fallbackHeight = 400.0,
   }) : super(key: key);
 
   /// The color to draw the placeholder box.
@@ -83,12 +85,12 @@ class Placeholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return new LimitedBox(
+    return LimitedBox(
       maxWidth: fallbackWidth,
       maxHeight: fallbackHeight,
-      child: new CustomPaint(
+      child: CustomPaint(
         size: Size.infinite,
-        foregroundPainter: new _PlaceholderPainter(
+        foregroundPainter: _PlaceholderPainter(
           color: color,
           strokeWidth: strokeWidth,
         ),

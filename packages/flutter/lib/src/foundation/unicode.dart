@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -11,6 +11,9 @@
 ///  * <http://unicode.org/reports/tr9/>, which describes the Unicode
 ///    bidirectional text algorithm.
 class Unicode {
+  // This class is not meant to be instatiated or extended; this constructor
+  // prevents instantiation and extension.
+  // ignore: unused_element
   Unicode._();
   /// U+202A LEFT-TO-RIGHT EMBEDDING
   ///
@@ -68,7 +71,7 @@ class Unicode {
   /// Treat the following text as isolated and in the direction of its first
   /// strong directional character that is not inside a nested isolate.
   ///
-  /// This essentially "autodetects" the directionality of the text. It is not
+  /// This essentially "auto-detects" the directionality of the text. It is not
   /// 100% reliable. For example, Arabic text that starts with an English quote
   /// will be detected as LTR, not RTL, which will lead to the text being in a
   /// weird order.

@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,12 +6,13 @@ import 'dart:async';
 
 import '../application_package.dart';
 import '../base/common.dart';
+import '../base/io.dart';
 import '../cache.dart';
 import '../device.dart';
-import '../globals.dart';
+import '../globals.dart' as globals;
 import '../runner/flutter_command.dart';
 
-class InstallCommand extends FlutterCommand {
+class InstallCommand extends FlutterCommand with DeviceBasedDevelopmentArtifacts {
   InstallCommand() {
     requiresPubspecYaml();
   }
@@ -25,34 +26,44 @@ class InstallCommand extends FlutterCommand {
   Device device;
 
   @override
-  Future<Null> validateCommand() async {
+  Future<void> validateCommand() async {
     await super.validateCommand();
     device = await findTargetDevice();
-    if (device == null)
+    if (device == null) {
       throwToolExit('No target device found');
+    }
   }
 
   @override
-  Future<Null> runCommand() async {
+  Future<FlutterCommandResult> runCommand() async {
     final ApplicationPackage package = await applicationPackages.getPackageForPlatform(await device.targetPlatform);
 
     Cache.releaseLockEarly();
 
-    printStatus('Installing $package to $device...');
+    globals.printStatus('Installing $package to $device...');
 
-    if (!await installApp(device, package))
+    if (!await installApp(device, package)) {
       throwToolExit('Install failed');
+    }
+
+    return FlutterCommandResult.success();
   }
 }
 
-Future<bool> installApp(Device device, ApplicationPackage package, { bool uninstall: true }) async {
-  if (package == null)
+Future<bool> installApp(Device device, ApplicationPackage package, { bool uninstall = true }) async {
+  if (package == null) {
     return false;
+  }
 
-  if (uninstall && await device.isAppInstalled(package)) {
-    printStatus('Uninstalling old version...');
-    if (!await device.uninstallApp(package))
-      printError('Warning: uninstalling old version failed');
+  try {
+    if (uninstall && await device.isAppInstalled(package)) {
+      globals.printStatus('Uninstalling old version...');
+      if (!await device.uninstallApp(package)) {
+        globals.printError('Warning: uninstalling old version failed');
+      }
+    }
+  } on ProcessException catch (e) {
+    globals.printError('Error accessing device ${device.id}:\n${e.message}');
   }
 
   return device.installApp(package);

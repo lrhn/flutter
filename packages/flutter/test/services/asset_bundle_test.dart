@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -17,18 +17,18 @@ class TestAssetBundle extends CachingAssetBundle {
   @override
   Future<ByteData> load(String key) async {
     if (key == 'AssetManifest.json')
-      return new ByteData.view(new Uint8List.fromList(const Utf8Encoder().convert('{"one": ["one"]}')).buffer);
+      return ByteData.view(Uint8List.fromList(const Utf8Encoder().convert('{"one": ["one"]}')).buffer);
 
     loadCallCount[key] = loadCallCount[key] ?? 0 + 1;
     if (key == 'one')
-      return new ByteData(1)..setInt8(0, 49);
-    throw new FlutterError('key not found');
+      return ByteData(1)..setInt8(0, 49);
+    throw FlutterError('key not found');
   }
 }
 
 void main() {
   test('Caching asset bundle test', () async {
-    final TestAssetBundle bundle = new TestAssetBundle();
+    final TestAssetBundle bundle = TestAssetBundle();
 
     final ByteData assetData = await bundle.load('one');
     expect(assetData.getInt8(0), equals(49));
@@ -40,7 +40,7 @@ void main() {
 
     expect(bundle.loadCallCount['one'], 1);
 
-    FlutterError loadException;
+    Object loadException;
     try {
       await bundle.loadString('foo');
     } catch (e) {
@@ -51,9 +51,29 @@ void main() {
 
   test('AssetImage.obtainKey succeeds with ImageConfiguration.empty', () async {
     // This is a regression test for https://github.com/flutter/flutter/issues/12392
-    final AssetImage assetImage = new AssetImage('one', bundle: new TestAssetBundle());
+    final AssetImage assetImage = AssetImage('one', bundle: TestAssetBundle());
     final AssetBundleImageKey key = await assetImage.obtainKey(ImageConfiguration.empty);
     expect(key.name, 'one');
     expect(key.scale, 1.0);
   });
+
+  test('NetworkAssetBundle control test', () async {
+    final Uri uri = Uri.http('example.org', '/path');
+    final NetworkAssetBundle bundle = NetworkAssetBundle(uri);
+    FlutterError error;
+    try {
+      await bundle.load('key');
+    } on FlutterError catch (e) {
+      error = e;
+    }
+    expect(error, isNotNull);
+    expect(error.diagnostics.length, 2);
+    expect(error.diagnostics.last, isA<IntProperty>());
+    expect(
+      error.toStringDeep(),
+      'FlutterError\n'
+      '   Unable to load asset: key\n'
+      '   HTTP status code: 404\n',
+    );
+  }, skip: true);
 }

@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,19 +7,20 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 import 'constants.dart';
+import 'elevation_overlay.dart';
 import 'theme.dart';
 
 /// Signature for the callback used by ink effects to obtain the rectangle for the effect.
 ///
 /// Used by [InkHighlight] and [InkSplash], for example.
-typedef Rect RectCallback();
+typedef RectCallback = Rect Function();
 
 /// The various kinds of material in material design. Used to
 /// configure the default behavior of [Material] widgets.
 ///
 /// See also:
 ///
-///  * [Material], in particular [Material.type]
+///  * [Material], in particular [Material.type].
 ///  * [kMaterialEdges]
 enum MaterialType {
   /// Rectangle using default theme canvas color.
@@ -53,11 +54,11 @@ enum MaterialType {
 ///
 ///  * [MaterialType]
 ///  * [Material]
-final Map<MaterialType, BorderRadius> kMaterialEdges = <MaterialType, BorderRadius> {
+final Map<MaterialType, BorderRadius> kMaterialEdges = <MaterialType, BorderRadius>{
   MaterialType.canvas: null,
-  MaterialType.card: new BorderRadius.circular(2.0),
+  MaterialType.card: BorderRadius.circular(2.0),
   MaterialType.circle: null,
-  MaterialType.button: new BorderRadius.circular(2.0),
+  MaterialType.button: BorderRadius.circular(2.0),
   MaterialType.transparency: null,
 };
 
@@ -87,8 +88,9 @@ abstract class MaterialInkController {
 ///
 /// The Material widget is responsible for:
 ///
-/// 1. Clipping: Material clips its widget sub-tree to the shape specified by
-///    [shape], [type], and [borderRadius].
+/// 1. Clipping: If [clipBehavior] is not [Clip.none], Material clips its widget
+///    sub-tree to the shape specified by [shape], [type], and [borderRadius].
+///    By default, [clipBehavior] is [Clip.none] for performance considerations.
 /// 2. Elevation: Material elevates its widget sub-tree on the Z axis by
 ///    [elevation] pixels, and draws the appropriate shadow.
 /// 3. Ink effects: Material shows ink effects implemented by [InkFeature]s
@@ -148,14 +150,15 @@ abstract class MaterialInkController {
 ///
 /// See also:
 ///
-/// * [MergeableMaterial], a piece of material that can split and remerge.
-/// * [Card], a wrapper for a [Material] of [type] [MaterialType.card].
-/// * <https://material.google.com/>
+///  * [MergeableMaterial], a piece of material that can split and re-merge.
+///  * [Card], a wrapper for a [Material] of [type] [MaterialType.card].
+///  * <https://material.io/design/>
 class Material extends StatefulWidget {
   /// Creates a piece of material.
   ///
-  /// The [type], [elevation], [shadowColor], and [animationDuration] arguments
-  /// must not be null.
+  /// The [type], [elevation], [shadowColor], [borderOnForeground],
+  /// [clipBehavior], and [animationDuration] arguments must not be null.
+  /// Additionally, [elevation] must be non-negative.
   ///
   /// If a [shape] is specified, then the [borderRadius] property must be
   /// null and the [type] property must not be [MaterialType.circle]. If the
@@ -164,21 +167,25 @@ class Material extends StatefulWidget {
   /// catch likely errors.
   const Material({
     Key key,
-    this.type: MaterialType.canvas,
-    this.elevation: 0.0,
+    this.type = MaterialType.canvas,
+    this.elevation = 0.0,
     this.color,
-    this.shadowColor: const Color(0xFF000000),
+    this.shadowColor = const Color(0xFF000000),
     this.textStyle,
     this.borderRadius,
     this.shape,
-    this.animationDuration: kThemeChangeDuration,
+    this.borderOnForeground = true,
+    this.clipBehavior = Clip.none,
+    this.animationDuration = kThemeChangeDuration,
     this.child,
   }) : assert(type != null),
-       assert(elevation != null),
+       assert(elevation != null && elevation >= 0.0),
        assert(shadowColor != null),
        assert(!(shape != null && borderRadius != null)),
        assert(animationDuration != null),
        assert(!(identical(type, MaterialType.circle) && (borderRadius != null || shape != null))),
+       assert(borderOnForeground != null),
+       assert(clipBehavior != null),
        super(key: key);
 
   /// The widget below this widget in the tree.
@@ -191,20 +198,38 @@ class Material extends StatefulWidget {
   /// the shape is rectangular, and the default color.
   final MaterialType type;
 
-  /// The z-coordinate at which to place this material. This controls the size
-  /// of the shadow below the material.
+  /// {@template flutter.material.material.elevation}
+  /// The z-coordinate at which to place this material relative to its parent.
+  ///
+  /// This controls the size of the shadow below the material and the opacity
+  /// of the elevation overlay color if it is applied.
   ///
   /// If this is non-zero, the contents of the material are clipped, because the
   /// widget conceptually defines an independent printed piece of material.
   ///
-  /// Defaults to 0. Changing this value will cause the shadow to animate over
-  /// [animationDuration].
+  /// Defaults to 0. Changing this value will cause the shadow and the elevation
+  /// overlay to animate over [animationDuration].
+  ///
+  /// The value is non-negative.
+  ///
+  /// See also:
+  ///
+  ///  * [ThemeData.applyElevationOverlayColor] which controls the whether
+  ///    an overlay color will be applied to indicate elevation.
+  ///  * [color] which may have an elevation overlay applied.
+  ///
+  /// {@endtemplate}
   final double elevation;
 
   /// The color to paint the material.
   ///
   /// Must be opaque. To create a transparent piece of material, use
   /// [MaterialType.transparency].
+  ///
+  /// To support dark themes, if the surrounding
+  /// [ThemeData.applyElevationOverlayColor] is true then a semi-transparent
+  /// overlay color will be composited on top this color to indicate
+  /// the elevation.
   ///
   /// By default, the color is derived from the [type] of material.
   final Color color;
@@ -226,20 +251,38 @@ class Material extends StatefulWidget {
   /// zero.
   final ShapeBorder shape;
 
+  /// Whether to paint the [shape] border in front of the [child].
+  ///
+  /// The default value is true.
+  /// If false, the border will be painted behind the [child].
+  final bool borderOnForeground;
+
+  /// {@template flutter.widgets.Clip}
+  /// The content will be clipped (or not) according to this option.
+  ///
+  /// See the enum [Clip] for details of all possible options and their common
+  /// use cases.
+  /// {@endtemplate}
+  ///
+  /// Defaults to [Clip.none], and must not be null.
+  final Clip clipBehavior;
+
   /// Defines the duration of animated changes for [shape], [elevation],
-  /// and [shadowColor].
+  /// [shadowColor] and the elevation overlay if it is applied.
   ///
   /// The default value is [kThemeChangeDuration].
   final Duration animationDuration;
 
-  /// If non-null, the corners of this box are rounded by this [BorderRadius].
+  /// If non-null, the corners of this box are rounded by this
+  /// [BorderRadiusGeometry] value.
+  ///
   /// Otherwise, the corners specified for the current [type] of material are
   /// used.
   ///
   /// If [shape] is non null then the border radius is ignored.
   ///
   /// Must be null if [type] is [MaterialType.circle].
-  final BorderRadius borderRadius;
+  final BorderRadiusGeometry borderRadius;
 
   /// The ink controller from the closest instance of this class that
   /// encloses the given context.
@@ -250,23 +293,24 @@ class Material extends StatefulWidget {
   /// MaterialInkController inkController = Material.of(context);
   /// ```
   static MaterialInkController of(BuildContext context) {
-    final _RenderInkFeatures result = context.ancestorRenderObjectOfType(const TypeMatcher<_RenderInkFeatures>());
+    final _RenderInkFeatures result = context.findAncestorRenderObjectOfType<_RenderInkFeatures>();
     return result;
   }
 
   @override
-  _MaterialState createState() => new _MaterialState();
+  _MaterialState createState() => _MaterialState();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(new EnumProperty<MaterialType>('type', type));
-    properties.add(new DoubleProperty('elevation', elevation, defaultValue: 0.0));
-    properties.add(new DiagnosticsProperty<Color>('color', color, defaultValue: null));
-    properties.add(new DiagnosticsProperty<Color>('shadowColor', shadowColor, defaultValue: const Color(0xFF000000)));
+    properties.add(EnumProperty<MaterialType>('type', type));
+    properties.add(DoubleProperty('elevation', elevation, defaultValue: 0.0));
+    properties.add(ColorProperty('color', color, defaultValue: null));
+    properties.add(ColorProperty('shadowColor', shadowColor, defaultValue: const Color(0xFF000000)));
     textStyle?.debugFillProperties(properties, prefix: 'textStyle.');
-    properties.add(new DiagnosticsProperty<ShapeBorder>('shape', shape, defaultValue: null));
-    properties.add(new EnumProperty<BorderRadius>('borderRadius', borderRadius, defaultValue: null));
+    properties.add(DiagnosticsProperty<ShapeBorder>('shape', shape, defaultValue: null));
+    properties.add(DiagnosticsProperty<bool>('borderOnForeground', borderOnForeground, defaultValue: true));
+    properties.add(DiagnosticsProperty<BorderRadiusGeometry>('borderRadius', borderRadius, defaultValue: null));
   }
 
   /// The default radius of an ink splash in logical pixels.
@@ -274,45 +318,56 @@ class Material extends StatefulWidget {
 }
 
 class _MaterialState extends State<Material> with TickerProviderStateMixin {
-  final GlobalKey _inkFeatureRenderer = new GlobalKey(debugLabel: 'ink renderer');
+  final GlobalKey _inkFeatureRenderer = GlobalKey(debugLabel: 'ink renderer');
 
   Color _getBackgroundColor(BuildContext context) {
-    if (widget.color != null)
-      return widget.color;
-    switch (widget.type) {
-      case MaterialType.canvas:
-        return Theme.of(context).canvasColor;
-      case MaterialType.card:
-        return Theme.of(context).cardColor;
-      default:
-        return null;
+    final ThemeData theme = Theme.of(context);
+    Color color = widget.color;
+    if (color == null) {
+      switch (widget.type) {
+        case MaterialType.canvas:
+          color = theme.canvasColor;
+          break;
+        case MaterialType.card:
+          color = theme.cardColor;
+          break;
+        default:
+          break;
+      }
     }
+    return color;
   }
 
   @override
   Widget build(BuildContext context) {
     final Color backgroundColor = _getBackgroundColor(context);
-    assert(backgroundColor != null || widget.type == MaterialType.transparency);
+    assert(
+      backgroundColor != null || widget.type == MaterialType.transparency,
+      'If Material type is not MaterialType.transparency, a color must '
+      'either be passed in through the `color` property, or be defined '
+      'in the theme (ex. canvasColor != null if type is set to '
+      'MaterialType.canvas)'
+    );
     Widget contents = widget.child;
     if (contents != null) {
-      contents = new AnimatedDefaultTextStyle(
-        style: widget.textStyle ?? Theme.of(context).textTheme.body1,
+      contents = AnimatedDefaultTextStyle(
+        style: widget.textStyle ?? Theme.of(context).textTheme.bodyText2,
         duration: widget.animationDuration,
-        child: contents
+        child: contents,
       );
     }
-    contents = new NotificationListener<LayoutChangedNotification>(
+    contents = NotificationListener<LayoutChangedNotification>(
       onNotification: (LayoutChangedNotification notification) {
-        final _RenderInkFeatures renderer = _inkFeatureRenderer.currentContext.findRenderObject();
+        final _RenderInkFeatures renderer = _inkFeatureRenderer.currentContext.findRenderObject() as _RenderInkFeatures;
         renderer._didChangeLayout();
-        return true;
+        return false;
       },
-      child: new _InkFeatures(
+      child: _InkFeatures(
         key: _inkFeatureRenderer,
         color: backgroundColor,
         child: contents,
         vsync: this,
-      )
+      ),
     );
 
     // PhysicalModel has a temporary workaround for a performance issue that
@@ -325,13 +380,14 @@ class _MaterialState extends State<Material> with TickerProviderStateMixin {
     // we choose not to as we want the change from the fast-path to the
     // slow-path to be noticeable in the construction site of Material.
     if (widget.type == MaterialType.canvas && widget.shape == null && widget.borderRadius == null) {
-      return new AnimatedPhysicalModel(
+      return AnimatedPhysicalModel(
         curve: Curves.fastOutSlowIn,
         duration: widget.animationDuration,
         shape: BoxShape.rectangle,
+        clipBehavior: widget.clipBehavior,
         borderRadius: BorderRadius.zero,
         elevation: widget.elevation,
-        color: backgroundColor,
+        color: ElevationOverlay.applyOverlay(context, backgroundColor, widget.elevation),
         shadowColor: widget.shadowColor,
         animateColor: false,
         child: contents,
@@ -340,13 +396,21 @@ class _MaterialState extends State<Material> with TickerProviderStateMixin {
 
     final ShapeBorder shape = _getShape();
 
-    if (widget.type == MaterialType.transparency)
-      return _transparentInterior(shape: shape, contents: contents);
+    if (widget.type == MaterialType.transparency) {
+      return _transparentInterior(
+        context: context,
+        shape: shape,
+        clipBehavior: widget.clipBehavior,
+        contents: contents,
+      );
+    }
 
-    return new _MaterialInterior(
+    return _MaterialInterior(
       curve: Curves.fastOutSlowIn,
       duration: widget.animationDuration,
       shape: shape,
+      borderOnForeground: widget.borderOnForeground,
+      clipBehavior: widget.clipBehavior,
       elevation: widget.elevation,
       color: backgroundColor,
       shadowColor: widget.shadowColor,
@@ -354,15 +418,26 @@ class _MaterialState extends State<Material> with TickerProviderStateMixin {
     );
   }
 
-  static Widget _transparentInterior({ShapeBorder shape, Widget contents}) {
-    return new ClipPath(
-      child: new _ShapeBorderPaint(
-        child: contents,
+  static Widget _transparentInterior({
+    @required BuildContext context,
+    @required ShapeBorder shape,
+    @required Clip clipBehavior,
+    @required Widget contents,
+  }) {
+    final _ShapeBorderPaint child = _ShapeBorderPaint(
+      child: contents,
+      shape: shape,
+    );
+    if (clipBehavior == Clip.none) {
+      return child;
+    }
+    return ClipPath(
+      child: child,
+      clipper: ShapeBorderClipper(
         shape: shape,
+        textDirection: Directionality.of(context),
       ),
-      clipper: new ShapeBorderClipper(
-        shape: shape,
-      ),
+      clipBehavior: clipBehavior,
     );
   }
 
@@ -377,7 +452,7 @@ class _MaterialState extends State<Material> with TickerProviderStateMixin {
     if (widget.shape != null)
       return widget.shape;
     if (widget.borderRadius != null)
-      return new RoundedRectangleBorder(borderRadius: widget.borderRadius);
+      return RoundedRectangleBorder(borderRadius: widget.borderRadius);
     switch (widget.type) {
       case MaterialType.canvas:
       case MaterialType.transparency:
@@ -385,7 +460,7 @@ class _MaterialState extends State<Material> with TickerProviderStateMixin {
 
       case MaterialType.card:
       case MaterialType.button:
-        return new RoundedRectangleBorder(
+        return RoundedRectangleBorder(
           borderRadius: widget.borderRadius ?? kMaterialEdges[widget.type],
         );
 
@@ -449,7 +524,7 @@ class _RenderInkFeatures extends RenderProxyBox implements MaterialInkController
       canvas.save();
       canvas.translate(offset.dx, offset.dy);
       canvas.clipRect(Offset.zero & size);
-      for (InkFeature inkFeature in _inkFeatures)
+      for (final InkFeature inkFeature in _inkFeatures)
         inkFeature._paint(canvas);
       canvas.restore();
     }
@@ -474,7 +549,7 @@ class _InkFeatures extends SingleChildRenderObjectWidget {
 
   @override
   _RenderInkFeatures createRenderObject(BuildContext context) {
-    return new _RenderInkFeatures(
+    return _RenderInkFeatures(
       color: color,
       vsync: vsync,
     );
@@ -500,14 +575,14 @@ abstract class InkFeature {
     this.onRemoved,
   }) : assert(controller != null),
        assert(referenceBox != null),
-       _controller = controller;
+       _controller = controller as _RenderInkFeatures;
 
   /// The [MaterialInkController] associated with this [InkFeature].
   ///
   /// Typically used by subclasses to call
   /// [MaterialInkController.markNeedsPaint] when they need to repaint.
   MaterialInkController get controller => _controller;
-  _RenderInkFeatures _controller;
+  final _RenderInkFeatures _controller;
 
   /// The render box whose visual position defines the frame of reference for this ink feature.
   final RenderBox referenceBox;
@@ -521,7 +596,10 @@ abstract class InkFeature {
   @mustCallSuper
   void dispose() {
     assert(!_debugDisposed);
-    assert(() { _debugDisposed = true; return true; }());
+    assert(() {
+      _debugDisposed = true;
+      return true;
+    }());
     _controller._removeFeature(this);
     if (onRemoved != null)
       onRemoved();
@@ -534,12 +612,12 @@ abstract class InkFeature {
     final List<RenderObject> descendants = <RenderObject>[referenceBox];
     RenderObject node = referenceBox;
     while (node != _controller) {
-      node = node.parent;
+      node = node.parent as RenderObject;
       assert(node != null);
       descendants.add(node);
     }
     // determine the transform that gets our coordinate system to be like theirs
-    final Matrix4 transform = new Matrix4.identity();
+    final Matrix4 transform = Matrix4.identity();
     assert(descendants.length >= 2);
     for (int index = descendants.length - 1; index > 0; index -= 1)
       descendants[index].applyPaintTransform(descendants[index - 1], transform);
@@ -565,7 +643,7 @@ class ShapeBorderTween extends Tween<ShapeBorder> {
   ///
   /// the [begin] and [end] properties may be null; see [ShapeBorder.lerp] for
   /// the null handling semantics.
-  ShapeBorderTween({ShapeBorder begin, ShapeBorder end}): super(begin: begin, end: end);
+  ShapeBorderTween({ShapeBorder begin, ShapeBorder end}) : super(begin: begin, end: end);
 
   /// Returns the value this tween has at the given animation clock value.
   @override
@@ -578,18 +656,26 @@ class ShapeBorderTween extends Tween<ShapeBorder> {
 ///
 /// Animates [elevation], [shadowColor], and [shape].
 class _MaterialInterior extends ImplicitlyAnimatedWidget {
+  /// Creates a const instance of [_MaterialInterior].
+  ///
+  /// The [child], [shape], [clipBehavior], [color], and [shadowColor] arguments
+  /// must not be null. The [elevation] must be specified and greater than or
+  /// equal to zero.
   const _MaterialInterior({
     Key key,
     @required this.child,
     @required this.shape,
+    this.borderOnForeground = true,
+    this.clipBehavior = Clip.none,
     @required this.elevation,
     @required this.color,
     @required this.shadowColor,
-    Curve curve: Curves.linear,
+    Curve curve = Curves.linear,
     @required Duration duration,
   }) : assert(child != null),
        assert(shape != null),
-       assert(elevation != null),
+       assert(clipBehavior != null),
+       assert(elevation != null && elevation >= 0.0),
        assert(color != null),
        assert(shadowColor != null),
        super(key: key, curve: curve, duration: duration);
@@ -605,7 +691,21 @@ class _MaterialInterior extends ImplicitlyAnimatedWidget {
   /// determines the physical shape.
   final ShapeBorder shape;
 
-  /// The target z-coordinate at which to place this physical object.
+  /// Whether to paint the border in front of the child.
+  ///
+  /// The default value is true.
+  /// If false, the border will be painted behind the child.
+  final bool borderOnForeground;
+
+  /// {@macro flutter.widgets.Clip}
+  ///
+  /// Defaults to [Clip.none], and must not be null.
+  final Clip clipBehavior;
+
+  /// The target z-coordinate at which to place this physical object relative
+  /// to its parent.
+  ///
+  /// The value is non-negative.
   final double elevation;
 
   /// The target background color.
@@ -615,15 +715,15 @@ class _MaterialInterior extends ImplicitlyAnimatedWidget {
   final Color shadowColor;
 
   @override
-  _MaterialInteriorState createState() => new _MaterialInteriorState();
+  _MaterialInteriorState createState() => _MaterialInteriorState();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder description) {
     super.debugFillProperties(description);
-    description.add(new DiagnosticsProperty<ShapeBorder>('shape', shape));
-    description.add(new DoubleProperty('elevation', elevation));
-    description.add(new DiagnosticsProperty<Color>('color', color));
-    description.add(new DiagnosticsProperty<Color>('shadowColor', shadowColor));
+    description.add(DiagnosticsProperty<ShapeBorder>('shape', shape));
+    description.add(DoubleProperty('elevation', elevation));
+    description.add(ColorProperty('color', color));
+    description.add(ColorProperty('shadowColor', shadowColor));
   }
 }
 
@@ -634,25 +734,40 @@ class _MaterialInteriorState extends AnimatedWidgetBaseState<_MaterialInterior> 
 
   @override
   void forEachTween(TweenVisitor<dynamic> visitor) {
-    _elevation = visitor(_elevation, widget.elevation, (dynamic value) => new Tween<double>(begin: value));
-    _shadowColor = visitor(_shadowColor, widget.shadowColor, (dynamic value) => new ColorTween(begin: value));
-    _border = visitor(_border, widget.shape, (dynamic value) => new ShapeBorderTween(begin: value));
+    _elevation = visitor(
+      _elevation,
+      widget.elevation,
+      (dynamic value) => Tween<double>(begin: value as double),
+    ) as Tween<double>;
+    _shadowColor = visitor(
+      _shadowColor,
+      widget.shadowColor,
+      (dynamic value) => ColorTween(begin: value as Color),
+    ) as ColorTween;
+    _border = visitor(
+      _border,
+      widget.shape,
+      (dynamic value) => ShapeBorderTween(begin: value as ShapeBorder),
+    ) as ShapeBorderTween;
   }
 
   @override
   Widget build(BuildContext context) {
     final ShapeBorder shape = _border.evaluate(animation);
-    return new PhysicalShape(
-      child: new _ShapeBorderPaint(
+    final double elevation = _elevation.evaluate(animation);
+    return PhysicalShape(
+      child: _ShapeBorderPaint(
         child: widget.child,
         shape: shape,
+        borderOnForeground: widget.borderOnForeground,
       ),
-      clipper: new ShapeBorderClipper(
+      clipper: ShapeBorderClipper(
         shape: shape,
-        textDirection: Directionality.of(context)
+        textDirection: Directionality.of(context),
       ),
-      elevation: _elevation.evaluate(animation),
-      color: widget.color,
+      clipBehavior: widget.clipBehavior,
+      elevation: elevation,
+      color: ElevationOverlay.applyOverlay(context, widget.color, elevation),
       shadowColor: _shadowColor.evaluate(animation),
     );
   }
@@ -662,16 +777,19 @@ class _ShapeBorderPaint extends StatelessWidget {
   const _ShapeBorderPaint({
     @required this.child,
     @required this.shape,
+    this.borderOnForeground = true,
   });
 
   final Widget child;
   final ShapeBorder shape;
+  final bool borderOnForeground;
 
   @override
   Widget build(BuildContext context) {
-    return new CustomPaint(
+    return CustomPaint(
       child: child,
-      foregroundPainter: new _ShapeBorderPainter(shape, Directionality.of(context)),
+      painter: borderOnForeground ? null : _ShapeBorderPainter(shape, Directionality.of(context)),
+      foregroundPainter: borderOnForeground ? _ShapeBorderPainter(shape, Directionality.of(context)) : null,
     );
   }
 }

@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -10,9 +10,9 @@ void main() {
     throw 'Who lives, who dies, who tells your story?';
   });
   testWidgets('Exception handling in test harness - FlutterError', (WidgetTester tester) async {
-    throw new FlutterError('Who lives, who dies, who tells your story?');
+    throw FlutterError('Who lives, who dies, who tells your story?');
   });
   testWidgets('Exception handling in test harness - uncaught Future error', (WidgetTester tester) async {
-    new Future<Null>.error('Who lives, who dies, who tells your story?');
+    Future<void>.error('Who lives, who dies, who tells your story?');
   });
 }

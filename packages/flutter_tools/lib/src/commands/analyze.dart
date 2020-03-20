@@ -1,16 +1,35 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'dart:async';
 
+import 'package:meta/meta.dart';
+import 'package:platform/platform.dart';
+import 'package:process/process.dart';
+
 import '../base/file_system.dart';
+import '../base/logger.dart';
+import '../base/terminal.dart';
+import '../globals.dart' as globals;
 import '../runner/flutter_command.dart';
 import 'analyze_continuously.dart';
 import 'analyze_once.dart';
 
 class AnalyzeCommand extends FlutterCommand {
-  AnalyzeCommand({bool verboseHelp: false, this.workingDirectory}) {
+  AnalyzeCommand({
+    bool verboseHelp = false,
+    this.workingDirectory,
+    @required FileSystem fileSystem,
+    @required Platform platform,
+    @required AnsiTerminal terminal,
+    @required Logger logger,
+    @required ProcessManager processManager,
+  }) : _fileSystem = fileSystem,
+       _processManager = processManager,
+       _logger = logger,
+       _terminal = terminal,
+       _platform = platform {
     argParser.addFlag('flutter-repo',
         negatable: false,
         help: 'Include all the examples and tests from the Flutter repository.',
@@ -20,18 +39,16 @@ class AnalyzeCommand extends FlutterCommand {
         help: 'Analyze the current project, if applicable.', defaultsTo: true);
     argParser.addFlag('dartdocs',
         negatable: false,
-        help: 'List every public member that is lacking documentation '
-            '(only works with --flutter-repo).',
+        help: 'List every public member that is lacking documentation. '
+              '(The public_member_api_docs lint must be enabled in analysis_options.yaml)',
         hide: !verboseHelp);
     argParser.addFlag('watch',
         help: 'Run analysis continuously, watching the filesystem for changes.',
         negatable: false);
-    argParser.addFlag('preview-dart-2',
-        defaultsTo: true, help: 'Preview Dart 2.0 functionality.');
     argParser.addOption('write',
         valueHelp: 'file',
         help: 'Also output the results to a file. This is useful with --watch '
-            'if you want a file to always contain the latest results.');
+              'if you want a file to always contain the latest results.');
     argParser.addOption('dart-sdk',
         valueHelp: 'path-to-sdk',
         help: 'The path to the Dart SDK.',
@@ -47,17 +64,24 @@ class AnalyzeCommand extends FlutterCommand {
 
     // Not used by analyze --watch
     argParser.addFlag('congratulate',
-        help: 'When analyzing the flutter repository, show output even when '
-            'there are no errors, warnings, hints, or lints.',
+        help: 'Show output even when there are no errors, warnings, hints, or lints. '
+              'Ignored if --watch is specified.',
         defaultsTo: true);
     argParser.addFlag('preamble',
         defaultsTo: true,
         help: 'When analyzing the flutter repository, display the number of '
-            'files that will be analyzed.');
+              'files that will be analyzed.\n'
+              'Ignored if --watch is specified.');
   }
 
   /// The working directory for testing analysis using dartanalyzer.
   final Directory workingDirectory;
+
+  final FileSystem _fileSystem;
+  final Logger _logger;
+  final AnsiTerminal _terminal;
+  final ProcessManager _processManager;
+  final Platform _platform;
 
   @override
   String get name => 'analyze';
@@ -68,12 +92,12 @@ class AnalyzeCommand extends FlutterCommand {
   @override
   bool get shouldRunPub {
     // If they're not analyzing the current project.
-    if (!argResults['current-package']) {
+    if (!boolArg('current-package')) {
       return false;
     }
 
     // Or we're not in a project directory.
-    if (!fs.file('pubspec.yaml').existsSync()) {
+    if (!_fileSystem.file('pubspec.yaml').existsSync()) {
       return false;
     }
 
@@ -81,22 +105,35 @@ class AnalyzeCommand extends FlutterCommand {
   }
 
   @override
-  Future<Null> runCommand() {
-    if (argResults['watch']) {
-      return new AnalyzeContinuously(
+  Future<FlutterCommandResult> runCommand() async {
+    if (boolArg('watch')) {
+      await AnalyzeContinuously(
         argResults,
         runner.getRepoRoots(),
         runner.getRepoPackages(),
-        previewDart2: argResults['preview-dart-2'],
+        fileSystem: _fileSystem,
+        // TODO(jonahwilliams): determine a better way to inject the logger,
+        // since it is constructed on-demand.
+        logger: _logger ?? globals.logger,
+        platform: _platform,
+        processManager: _processManager,
+        terminal: _terminal,
       ).analyze();
     } else {
-      return new AnalyzeOnce(
+      await AnalyzeOnce(
         argResults,
         runner.getRepoRoots(),
         runner.getRepoPackages(),
         workingDirectory: workingDirectory,
-        previewDart2: argResults['preview-dart-2'],
+        fileSystem: _fileSystem,
+        // TODO(jonahwilliams): determine a better way to inject the logger,
+        // since it is constructed on-demand.
+        logger: _logger ?? globals.logger,
+        platform: _platform,
+        processManager: _processManager,
+        terminal: _terminal,
       ).analyze();
     }
+    return FlutterCommandResult.success();
   }
 }

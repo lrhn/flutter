@@ -1,19 +1,27 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'dart:math' as math;
 
+import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/semantics.dart';
 import 'package:vector_math/vector_math_64.dart';
 
-import 'binding.dart';
 import 'box.dart';
 import 'object.dart';
 import 'sliver.dart';
 import 'viewport_offset.dart';
+
+/// The unit of measurement for a [Viewport.cacheExtent].
+enum CacheExtentStyle {
+  /// Treat the [Viewport.cacheExtent] as logical pixels.
+  pixel,
+  /// Treat the [Viewport.cacheExtent] as a multiplier of the main axis extent.
+  viewport,
+}
 
 /// An interface for render objects that are bigger on the inside.
 ///
@@ -22,8 +30,9 @@ import 'viewport_offset.dart';
 /// the framework recognize such render objects and interact with them without
 /// having specific knowledge of all the various types of viewports.
 abstract class RenderAbstractViewport extends RenderObject {
-  // This class is intended to be used as an interface with the implements
-  // keyword, and should not be extended directly.
+  // This class is intended to be used as an interface, and should not be
+  // extended directly; this constructor prevents instantiation and extension.
+  // ignore: unused_element
   factory RenderAbstractViewport._() => null;
 
   /// Returns the [RenderAbstractViewport] that most tightly encloses the given
@@ -35,12 +44,19 @@ abstract class RenderAbstractViewport extends RenderObject {
     while (object != null) {
       if (object is RenderAbstractViewport)
         return object;
-      object = object.parent;
+      object = object.parent as RenderObject;
     }
     return null;
   }
 
-  /// Returns the offset that would be needed to reveal the target render object.
+  /// Returns the offset that would be needed to reveal the `target`
+  /// [RenderObject].
+  ///
+  /// The optional `rect` parameter describes which area of that `target` object
+  /// should be revealed in the viewport. If `rect` is null, the entire
+  /// `target` [RenderObject] (as defined by its [RenderObject.paintBounds])
+  /// will be revealed. If `rect` is provided it has to be given in the
+  /// coordinate system of the `target` object.
   ///
   /// The `alignment` argument describes where the target should be positioned
   /// after applying the returned offset. If `alignment` is 0.0, the child must
@@ -49,10 +65,18 @@ abstract class RenderAbstractViewport extends RenderObject {
   /// edge of the viewport as possible. If `alignment` is 0.5, the child must be
   /// positioned as close to the center of the viewport as possible.
   ///
-  /// The target might not be a direct child of this viewport but it must be a
-  /// descendant of the viewport and there must not be any other
-  /// [RenderAbstractViewport] objects between the target and this object.
-  double getOffsetToReveal(RenderObject target, double alignment);
+  /// The `target` might not be a direct child of this viewport but it must be a
+  /// descendant of the viewport. Other viewports in between this viewport and
+  /// the `target` will not be adjusted.
+  ///
+  /// This method assumes that the content of the viewport moves linearly, i.e.
+  /// when the offset of the viewport is changed by x then `target` also moves
+  /// by x within the viewport.
+  ///
+  /// See also:
+  ///
+  ///  * [RevealedOffset], which describes the return value of this method.
+  RevealedOffset getOffsetToReveal(RenderObject target, double alignment, { Rect rect });
 
   /// The default value for the cache extent of the viewport.
   ///
@@ -60,7 +84,62 @@ abstract class RenderAbstractViewport extends RenderObject {
   ///
   ///  * [RenderViewportBase.cacheExtent] for a definition of the cache extent.
   @protected
+  @visibleForTesting
   static const double defaultCacheExtent = 250.0;
+}
+
+/// Return value for [RenderAbstractViewport.getOffsetToReveal].
+///
+/// It indicates the [offset] required to reveal an element in a viewport and
+/// the [rect] position said element would have in the viewport at that
+/// [offset].
+class RevealedOffset {
+
+  /// Instantiates a return value for [RenderAbstractViewport.getOffsetToReveal].
+  const RevealedOffset({
+    @required this.offset,
+    @required this.rect,
+  }) : assert(offset != null),
+       assert(rect != null);
+
+  /// Offset for the viewport to reveal a specific element in the viewport.
+  ///
+  /// See also:
+  ///
+  ///  * [RenderAbstractViewport.getOffsetToReveal], which calculates this
+  ///    value for a specific element.
+  final double offset;
+
+  /// The [Rect] in the outer coordinate system of the viewport at which the
+  /// to-be-revealed element would be located if the viewport's offset is set
+  /// to [offset].
+  ///
+  /// A viewport usually has two coordinate systems and works as an adapter
+  /// between the two:
+  ///
+  /// The inner coordinate system has its origin at the top left corner of the
+  /// content that moves inside the viewport. The origin of this coordinate
+  /// system usually moves around relative to the leading edge of the viewport
+  /// when the viewport offset changes.
+  ///
+  /// The outer coordinate system has its origin at the top left corner of the
+  /// visible part of the viewport. This origin stays at the same position
+  /// regardless of the current viewport offset.
+  ///
+  /// In other words: [rect] describes where the revealed element would be
+  /// located relative to the top left corner of the visible part of the
+  /// viewport if the viewport's offset is set to [offset].
+  ///
+  /// See also:
+  ///
+  ///  * [RenderAbstractViewport.getOffsetToReveal], which calculates this
+  ///    value for a specific element.
+  final Rect rect;
+
+  @override
+  String toString() {
+    return '${objectRuntimeType(this, 'RevealedOffset')}(offset: $offset, rect: $rect)';
+  }
 }
 
 /// A base class for render objects that are bigger on the inside.
@@ -87,18 +166,22 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
     implements RenderAbstractViewport {
   /// Initializes fields for subclasses.
   RenderViewportBase({
-    AxisDirection axisDirection: AxisDirection.down,
+    AxisDirection axisDirection = AxisDirection.down,
     @required AxisDirection crossAxisDirection,
     @required ViewportOffset offset,
     double cacheExtent,
+    CacheExtentStyle cacheExtentStyle = CacheExtentStyle.pixel,
   }) : assert(axisDirection != null),
        assert(crossAxisDirection != null),
        assert(offset != null),
        assert(axisDirectionToAxis(axisDirection) != axisDirectionToAxis(crossAxisDirection)),
+       assert(cacheExtentStyle != null),
+       assert(cacheExtent != null || cacheExtentStyle == CacheExtentStyle.pixel),
        _axisDirection = axisDirection,
        _crossAxisDirection = crossAxisDirection,
        _offset = offset,
-       _cacheExtent = cacheExtent ?? RenderAbstractViewport.defaultCacheExtent;
+       _cacheExtent = cacheExtent ?? RenderAbstractViewport.defaultCacheExtent,
+       _cacheExtentStyle = cacheExtentStyle;
 
   @override
   void describeSemanticsConfiguration(SemanticsConfiguration config) {
@@ -203,6 +286,34 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
     markNeedsLayout();
   }
 
+  /// This value is set during layout based on the [CacheExtentStyle].
+  ///
+  /// When the style is [CacheExtentStyle.viewport], it is the main axis extent
+  /// of the viewport multiplied by the requested cache extent, which is still
+  /// expressed in pixels.
+  double _calculatedCacheExtent;
+
+  /// {@template flutter.rendering.viewport.cacheExtentStyle}
+  /// Controls how the [cacheExtent] is interpreted.
+  ///
+  /// If set to [CacheExtentStyle.pixels], the [cacheExtent] will be treated as
+  /// a logical pixels.
+  ///
+  /// If set to [CacheExtentStyle.viewport], the [cacheExtent] will be treated
+  /// as a multiplier for the main axis extent of the viewport. In this case,
+  /// the [cacheExtent] must not be null.
+  /// {@endtemplate}
+  CacheExtentStyle get cacheExtentStyle => _cacheExtentStyle;
+  CacheExtentStyle _cacheExtentStyle;
+  set cacheExtentStyle(CacheExtentStyle value) {
+    assert(value != null);
+    if (value == _cacheExtentStyle) {
+      return;
+    }
+    _cacheExtentStyle = value;
+    markNeedsLayout();
+  }
+
   @override
   void attach(PipelineOwner owner) {
     super.attach(owner);
@@ -227,14 +338,18 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
     assert(() {
       if (!RenderObject.debugCheckingIntrinsics) {
         assert(this is! RenderShrinkWrappingViewport); // it has its own message
-        throw new FlutterError(
-          '$runtimeType does not support returning intrinsic dimensions.\n'
-          'Calculating the intrinsic dimensions would require instantiating every child of '
-          'the viewport, which defeats the point of viewports being lazy.\n'
-          'If you are merely trying to shrink-wrap the viewport in the main axis direction, '
-          'consider a RenderShrinkWrappingViewport render object (ShrinkWrappingViewport widget), '
-          'which achieves that effect without implementing the intrinsic dimension API.'
-        );
+        throw FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary('$runtimeType does not support returning intrinsic dimensions.'),
+          ErrorDescription(
+            'Calculating the intrinsic dimensions would require instantiating every child of '
+            'the viewport, which defeats the point of viewports being lazy.',
+          ),
+          ErrorHint(
+            'If you are merely trying to shrink-wrap the viewport in the main axis direction, '
+            'consider a RenderShrinkWrappingViewport render object (ShrinkWrappingViewport widget), '
+            'which achieves that effect without implementing the intrinsic dimension API.'
+          ),
+        ]);
       }
       return true;
     }());
@@ -319,32 +434,34 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
         applyGrowthDirectionToScrollDirection(offset.userScrollDirection, growthDirection);
     assert(adjustedUserScrollDirection != null);
     double maxPaintOffset = layoutOffset + overlap;
+    double precedingScrollExtent = 0.0;
 
     while (child != null) {
       final double sliverScrollOffset = scrollOffset <= 0.0 ? 0.0 : scrollOffset;
       // If the scrollOffset is too small we adjust the paddedOrigin because it
       // doesn't make sense to ask a sliver for content before its scroll
       // offset.
-      final double corectedCacheOrigin = math.max(cacheOrigin, -sliverScrollOffset);
-      final double cacheExtentCorrection = cacheOrigin - corectedCacheOrigin;
+      final double correctedCacheOrigin = math.max(cacheOrigin, -sliverScrollOffset);
+      final double cacheExtentCorrection = cacheOrigin - correctedCacheOrigin;
 
-      assert(sliverScrollOffset >= corectedCacheOrigin.abs());
-      assert(corectedCacheOrigin <= 0.0);
+      assert(sliverScrollOffset >= correctedCacheOrigin.abs());
+      assert(correctedCacheOrigin <= 0.0);
       assert(sliverScrollOffset >= 0.0);
       assert(cacheExtentCorrection <= 0.0);
 
-      child.layout(new SliverConstraints(
+      child.layout(SliverConstraints(
         axisDirection: axisDirection,
         growthDirection: growthDirection,
         userScrollDirection: adjustedUserScrollDirection,
         scrollOffset: sliverScrollOffset,
+        precedingScrollExtent: precedingScrollExtent,
         overlap: maxPaintOffset - layoutOffset,
         remainingPaintExtent: math.max(0.0, remainingPaintExtent - layoutOffset + initialLayoutOffset),
         crossAxisExtent: crossAxisExtent,
         crossAxisDirection: crossAxisDirection,
         viewportMainAxisExtent: mainAxisExtent,
         remainingCacheExtent: math.max(0.0, remainingCacheExtent + cacheExtentCorrection),
-        cacheOrigin: corectedCacheOrigin,
+        cacheOrigin: correctedCacheOrigin,
       ), parentUsesSize: true);
 
       final SliverGeometry childLayoutGeometry = child.geometry;
@@ -369,10 +486,11 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
 
       maxPaintOffset = math.max(effectiveLayoutOffset + childLayoutGeometry.paintExtent, maxPaintOffset);
       scrollOffset -= childLayoutGeometry.scrollExtent;
+      precedingScrollExtent += childLayoutGeometry.scrollExtent;
       layoutOffset += childLayoutGeometry.layoutExtent;
       if (childLayoutGeometry.cacheExtent != 0.0) {
         remainingCacheExtent -= childLayoutGeometry.cacheExtent - cacheExtentCorrection;
-        cacheOrigin = math.min(corectedCacheOrigin + childLayoutGeometry.cacheExtent, 0.0);
+        cacheOrigin = math.min(correctedCacheOrigin + childLayoutGeometry.cacheExtent, 0.0);
       }
 
       updateOutOfBandData(growthDirection, childLayoutGeometry);
@@ -388,7 +506,16 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
   @override
   Rect describeApproximatePaintClip(RenderSliver child) {
     final Rect viewportClip = Offset.zero & size;
-    if (child.constraints.overlap == 0) {
+    // The child's viewportMainAxisExtent can be infinite when a
+    // RenderShrinkWrappingViewport is given infinite constraints, such as when
+    // it is the child of a Row or Column (depending on orientation).
+    //
+    // For example, a shrink wrapping render sliver may have infinite
+    // constraints along the viewport's main axis but may also have bouncing
+    // scroll physics, which will allow for some scrolling effect to occur.
+    // We should just use the viewportClip - the start of the overlap is at
+    // double.infinity and so it is effectively meaningless.
+    if (child.constraints.overlap == 0 || !child.constraints.viewportMainAxisExtent.isFinite) {
       return viewportClip;
     }
 
@@ -413,25 +540,30 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
         right -= overlapCorrection;
         break;
     }
-    return new Rect.fromLTRB(left, top, right, bottom);
+    return Rect.fromLTRB(left, top, right, bottom);
   }
 
   @override
   Rect describeSemanticsClip(RenderSliver child) {
-    assert (axis != null);
+    assert(axis != null);
+
+    if (_calculatedCacheExtent == null) {
+      return semanticBounds;
+    }
+
     switch (axis) {
       case Axis.vertical:
-        return new Rect.fromLTRB(
+        return Rect.fromLTRB(
           semanticBounds.left,
-          semanticBounds.top - cacheExtent,
+          semanticBounds.top - _calculatedCacheExtent,
           semanticBounds.right,
-          semanticBounds.bottom + cacheExtent,
+          semanticBounds.bottom + _calculatedCacheExtent,
         );
       case Axis.horizontal:
-        return new Rect.fromLTRB(
-          semanticBounds.left - cacheExtent,
+        return Rect.fromLTRB(
+          semanticBounds.left - _calculatedCacheExtent,
           semanticBounds.top,
-          semanticBounds.right + cacheExtent,
+          semanticBounds.right + _calculatedCacheExtent,
           semanticBounds.bottom,
         );
     }
@@ -450,7 +582,7 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
   }
 
   void _paintContents(PaintingContext context, Offset offset) {
-    for (RenderSliver child in childrenInPaintOrder) {
+    for (final RenderSliver child in childrenInPaintOrder) {
       if (child.geometry.visible)
         context.paintChild(child, offset + paintOffsetOf(child));
     }
@@ -460,7 +592,7 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
   void debugPaintSize(PaintingContext context, Offset offset) {
     assert(() {
       super.debugPaintSize(context, offset);
-      final Paint paint = new Paint()
+      final Paint paint = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.0
         ..color = const Color(0xFF00FF00);
@@ -470,10 +602,10 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
         Size size;
         switch (axis) {
           case Axis.vertical:
-            size = new Size(child.constraints.crossAxisExtent, child.geometry.layoutExtent);
+            size = Size(child.constraints.crossAxisExtent, child.geometry.layoutExtent);
             break;
           case Axis.horizontal:
-            size = new Size(child.geometry.layoutExtent, child.constraints.crossAxisExtent);
+            size = Size(child.geometry.layoutExtent, child.constraints.crossAxisExtent);
             break;
         }
         assert(size != null);
@@ -485,7 +617,7 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
   }
 
   @override
-  bool hitTestChildren(HitTestResult result, { Offset position }) {
+  bool hitTestChildren(BoxHitTestResult result, { Offset position }) {
     double mainAxisPosition, crossAxisPosition;
     switch (axis) {
       case Axis.vertical:
@@ -499,12 +631,25 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
     }
     assert(mainAxisPosition != null);
     assert(crossAxisPosition != null);
-    for (RenderSliver child in childrenInHitTestOrder) {
-      if (child.geometry.visible && child.hitTest(
-        result,
-        mainAxisPosition: computeChildMainAxisPosition(child, mainAxisPosition),
-        crossAxisPosition: crossAxisPosition
-      )) {
+    final SliverHitTestResult sliverResult = SliverHitTestResult.wrap(result);
+    for (final RenderSliver child in childrenInHitTestOrder) {
+      if (!child.geometry.visible) {
+        continue;
+      }
+      final Matrix4 transform = Matrix4.identity();
+      applyPaintTransform(child, transform);
+      final bool isHit = result.addWithPaintTransform(
+        transform: transform,
+        position: null, // Manually adapting from box to sliver position below.
+        hitTest: (BoxHitTestResult result, Offset _) {
+          return child.hitTest(
+            sliverResult,
+            mainAxisPosition: computeChildMainAxisPosition(child, mainAxisPosition),
+            crossAxisPosition: crossAxisPosition,
+          );
+        },
+      );
+      if (isHit) {
         return true;
       }
     }
@@ -512,29 +657,41 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
   }
 
   @override
-  double getOffsetToReveal(RenderObject target, double alignment) {
-    double leadingScrollOffset;
+  RevealedOffset getOffsetToReveal(RenderObject target, double alignment, { Rect rect }) {
+    double leadingScrollOffset = 0.0;
     double targetMainAxisExtent;
-    RenderObject descendant;
+    rect ??= target.paintBounds;
 
-    if (target is RenderBox) {
-      final RenderBox targetBox = target;
+    // Starting at `target` and walking towards the root:
+    //  - `child` will be the last object before we reach this viewport, and
+    //  - `pivot` will be the last RenderBox before we reach this viewport.
+    RenderObject child = target;
+    RenderBox pivot;
+    bool onlySlivers = target is RenderSliver; // ... between viewport and `target` (`target` included).
+    while (child.parent != this) {
+      final RenderObject parent = child.parent as RenderObject;
+      assert(parent != null, '$target must be a descendant of $this');
+      if (child is RenderBox) {
+        pivot = child;
+      }
+      if (parent is RenderSliver) {
+        leadingScrollOffset += parent.childScrollOffset(child);
+      } else {
+        onlySlivers = false;
+        leadingScrollOffset = 0.0;
+      }
+      child = parent;
+    }
 
-      RenderBox pivot = targetBox;
-      while (pivot.parent is RenderBox)
-        pivot = pivot.parent;
-
+    if (pivot != null) {
       assert(pivot.parent != null);
       assert(pivot.parent != this);
       assert(pivot != this);
+      assert(pivot.parent is RenderSliver);  // TODO(abarth): Support other kinds of render objects besides slivers.
+      final RenderSliver pivotParent = pivot.parent as RenderSliver;
 
-      final Matrix4 transform = targetBox.getTransformTo(pivot);
-      final Rect bounds = MatrixUtils.transformRect(transform, targetBox.paintBounds);
-
-      target = pivot;
-      // TODO(abarth): Support other kinds of render objects besides slivers.
-      assert(target.parent is RenderSliver);
-      final RenderSliver pivotParent = target.parent;
+      final Matrix4 transform = target.getTransformTo(pivot);
+      final Rect bounds = MatrixUtils.transformRect(transform, rect);
 
       final GrowthDirection growthDirection = pivotParent.constraints.growthDirection;
       switch (applyGrowthDirectionToAxisDirection(axisDirection, growthDirection)) {
@@ -548,15 +705,33 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
               offset = bounds.top;
               break;
           }
-          leadingScrollOffset = pivot.size.height - offset;
+          leadingScrollOffset += pivot.size.height - offset;
           targetMainAxisExtent = bounds.height;
           break;
         case AxisDirection.right:
-          leadingScrollOffset = bounds.left;
+          double offset;
+          switch (growthDirection) {
+            case GrowthDirection.forward:
+              offset = bounds.left;
+              break;
+            case GrowthDirection.reverse:
+              offset = bounds.right;
+              break;
+          }
+          leadingScrollOffset += offset;
           targetMainAxisExtent = bounds.width;
           break;
         case AxisDirection.down:
-          leadingScrollOffset = bounds.top;
+          double offset;
+          switch (growthDirection) {
+            case GrowthDirection.forward:
+              offset = bounds.top;
+              break;
+            case GrowthDirection.reverse:
+              offset = bounds.bottom;
+              break;
+          }
+          leadingScrollOffset += offset;
           targetMainAxisExtent = bounds.height;
           break;
         case AxisDirection.left:
@@ -569,31 +744,20 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
               offset = bounds.left;
               break;
           }
-          leadingScrollOffset = pivot.size.width - offset;
+          leadingScrollOffset += pivot.size.width - offset;
           targetMainAxisExtent = bounds.width;
           break;
       }
-      descendant = pivot;
-    } else if (target is RenderSliver) {
-      final RenderSliver targetSliver = target;
-      leadingScrollOffset = 0.0;
+    } else if (onlySlivers) {
+      final RenderSliver targetSliver = target as RenderSliver;
       targetMainAxisExtent = targetSliver.geometry.scrollExtent;
-      descendant = targetSliver;
     } else {
-      return offset.pixels;
-    }
-
-    // The child will be the topmost object before we get to the viewport.
-    RenderObject child = descendant;
-    while (child.parent is RenderSliver) {
-      final RenderSliver parent = child.parent;
-      leadingScrollOffset += parent.childScrollOffset(child);
-      child = parent;
+      return RevealedOffset(offset: offset.pixels, rect: rect);
     }
 
     assert(child.parent == this);
     assert(child is RenderSliver);
-    final RenderSliver sliver = child;
+    final RenderSliver sliver = child as RenderSliver;
     final double extentOfPinnedSlivers = maxScrollObstructionExtentBefore(sliver);
     leadingScrollOffset = scrollOffsetOf(sliver, leadingScrollOffset);
     switch (sliver.constraints.growthDirection) {
@@ -615,7 +779,29 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
         break;
     }
 
-    return leadingScrollOffset - (mainAxisExtent - targetMainAxisExtent) * alignment;
+    final double targetOffset = leadingScrollOffset - (mainAxisExtent - targetMainAxisExtent) * alignment;
+    final double offsetDifference = offset.pixels - targetOffset;
+
+    final Matrix4 transform = target.getTransformTo(this);
+    applyPaintTransform(child, transform);
+    Rect targetRect = MatrixUtils.transformRect(transform, rect);
+
+    switch (axisDirection) {
+      case AxisDirection.down:
+        targetRect = targetRect.translate(0.0, offsetDifference);
+        break;
+      case AxisDirection.right:
+        targetRect = targetRect.translate(offsetDifference, 0.0);
+        break;
+      case AxisDirection.up:
+        targetRect = targetRect.translate(0.0, -offsetDifference);
+        break;
+      case AxisDirection.left:
+        targetRect = targetRect.translate(-offsetDifference, 0.0);
+        break;
+    }
+
+    return RevealedOffset(offset: targetOffset, rect: targetRect);
   }
 
   /// The offset at which the given `child` should be painted.
@@ -624,8 +810,10 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
   /// viewport to the top left corner of the paint coordinate system of the
   /// `child`.
   ///
-  /// See also [paintOffsetOf], which uses the layout offset and growth
-  /// direction computed for the child during layout.
+  /// See also:
+  ///
+  ///  * [paintOffsetOf], which uses the layout offset and growth direction
+  ///    computed for the child during layout.
   @protected
   Offset computeAbsolutePaintOffset(RenderSliver child, double layoutOffset, GrowthDirection growthDirection) {
     assert(hasSize); // this is only usable once we have a size
@@ -635,25 +823,23 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
     assert(child.geometry != null);
     switch (applyGrowthDirectionToAxisDirection(axisDirection, growthDirection)) {
       case AxisDirection.up:
-        return new Offset(0.0, size.height - (layoutOffset + child.geometry.paintExtent));
+        return Offset(0.0, size.height - (layoutOffset + child.geometry.paintExtent));
       case AxisDirection.right:
-        return new Offset(layoutOffset, 0.0);
+        return Offset(layoutOffset, 0.0);
       case AxisDirection.down:
-        return new Offset(0.0, layoutOffset);
+        return Offset(0.0, layoutOffset);
       case AxisDirection.left:
-        return new Offset(size.width - (layoutOffset + child.geometry.paintExtent), 0.0);
+        return Offset(size.width - (layoutOffset + child.geometry.paintExtent), 0.0);
     }
     return null;
   }
 
-  // TODO(ianh): semantics - shouldn't walk the invisible children
-
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(new EnumProperty<AxisDirection>('axisDirection', axisDirection));
-    properties.add(new EnumProperty<AxisDirection>('crossAxisDirection', crossAxisDirection));
-    properties.add(new DiagnosticsProperty<ViewportOffset>('offset', offset));
+    properties.add(EnumProperty<AxisDirection>('axisDirection', axisDirection));
+    properties.add(EnumProperty<AxisDirection>('crossAxisDirection', crossAxisDirection));
+    properties.add(DiagnosticsProperty<ViewportOffset>('offset', offset));
   }
 
   @override
@@ -712,9 +898,11 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
   /// viewport to the top left corner of the paint coordinate system of the
   /// `child`.
   ///
-  /// See also [computeAbsolutePaintOffset], which computes the paint offset
-  /// from an explicit layout offset and growth direction instead of using the
-  /// values computed for the child during layout.
+  /// See also:
+  ///
+  ///  * [computeAbsolutePaintOffset], which computes the paint offset from an
+  ///    explicit layout offset and growth direction instead of using the values
+  ///    computed for the child during layout.
   @protected
   Offset paintOffsetOf(RenderSliver child);
 
@@ -783,42 +971,85 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
   Iterable<RenderSliver> get childrenInHitTestOrder;
 
   @override
-  void showOnScreen([RenderObject child]) {
-    RenderViewportBase.showInViewport(child: child, viewport: this, offset: offset);
-    // Make sure the viewport itself is on screen.
-    super.showOnScreen();
+  void showOnScreen({
+    RenderObject descendant,
+    Rect rect,
+    Duration duration = Duration.zero,
+    Curve curve = Curves.ease,
+  }) {
+    if (!offset.allowImplicitScrolling) {
+      return super.showOnScreen(
+        descendant: descendant,
+        rect: rect,
+        duration: duration,
+        curve: curve,
+      );
+    }
+
+    final Rect newRect = RenderViewportBase.showInViewport(
+      descendant: descendant,
+      viewport: this,
+      offset: offset,
+      rect: rect,
+      duration: duration,
+      curve: curve,
+    );
+    super.showOnScreen(
+      rect: newRect,
+      duration: duration,
+      curve: curve,
+    );
   }
 
-  /// Make the given `child` of the given `viewport` fully visible in the
-  /// `viewport` by manipulating the provided [ViewportOffset] `offset`.
+  /// Make (a portion of) the given `descendant` of the given `viewport` fully
+  /// visible in the `viewport` by manipulating the provided [ViewportOffset]
+  /// `offset`.
+  ///
+  /// The optional `rect` parameter describes which area of the `descendant`
+  /// should be shown in the viewport. If `rect` is null, the entire
+  /// `descendant` will be revealed. The `rect` parameter is interpreted
+  /// relative to the coordinate system of `descendant`.
+  ///
+  /// The returned [Rect] describes the new location of `descendant` or `rect`
+  /// in the viewport after it has been revealed. See [RevealedOffset.rect]
+  /// for a full definition of this [Rect].
   ///
   /// The parameters `viewport` and `offset` are required and cannot be null.
-  /// If `child` is null this is a no-op.
-  static void showInViewport({
-    RenderObject child,
+  /// If `descendant` is null, this is a no-op and `rect` is returned.
+  ///
+  /// If both `descendant` and `rect` are null, null is returned because there is
+  /// nothing to be shown in the viewport.
+  ///
+  /// The `duration` parameter can be set to a non-zero value to animate the
+  /// target object into the viewport with an animation defined by `curve`.
+  static Rect showInViewport({
+    RenderObject descendant,
+    Rect rect,
     @required RenderAbstractViewport viewport,
     @required ViewportOffset offset,
+    Duration duration = Duration.zero,
+    Curve curve = Curves.ease,
   }) {
     assert(viewport != null);
     assert(offset != null);
-    if (child == null) {
-      return;
+    if (descendant == null) {
+      return rect;
     }
-    final double leadingEdgeOffset = viewport.getOffsetToReveal(child, 0.0);
-    final double trailingEdgeOffset = viewport.getOffsetToReveal(child, 1.0);
+    final RevealedOffset leadingEdgeOffset = viewport.getOffsetToReveal(descendant, 0.0, rect: rect);
+    final RevealedOffset trailingEdgeOffset = viewport.getOffsetToReveal(descendant, 1.0, rect: rect);
     final double currentOffset = offset.pixels;
 
-    //        scrollOffset
-    //                    0 +---------+
-    //                      |         |
-    //                    _ |         |
-    // viewport position |  |         |
-    //   with `child` at |  |         | _
-    //     trailing edge |_ | xxxxxxx |  | viewport position
-    //                      |         |  | with `child` at
-    //                      |         | _| leading edge
-    //                      |         |
-    //                  800 +---------+
+    //           scrollOffset
+    //                       0 +---------+
+    //                         |         |
+    //                       _ |         |
+    //    viewport position |  |         |
+    // with `descendant` at |  |         | _
+    //        trailing edge |_ | xxxxxxx |  | viewport position
+    //                         |         |  | with `descendant` at
+    //                         |         | _| leading edge
+    //                         |         |
+    //                     800 +---------+
     //
     // `trailingEdgeOffset`: Distance from scrollOffset 0 to the start of the
     //                       viewport on the left in image above.
@@ -829,19 +1060,32 @@ abstract class RenderViewportBase<ParentDataClass extends ContainerParentDataMix
     // to `trailingEdgeOffset`, the one on the right by setting it to
     // `leadingEdgeOffset`.
 
-    assert(leadingEdgeOffset >= trailingEdgeOffset);
-
-    if (currentOffset > leadingEdgeOffset) {
-      // `child` currently starts above the leading edge and can be shown fully
-      // on screen by scrolling down (which means: moving viewport up).
-      offset.jumpTo(leadingEdgeOffset);
-    } else if (currentOffset < trailingEdgeOffset ) {
-      // `child currently ends below the trailing edge and can be shown fully
-      // on screen by scrolling up (which means: moving viewport down)
-      offset.jumpTo(trailingEdgeOffset);
+    RevealedOffset targetOffset;
+    if (leadingEdgeOffset.offset < trailingEdgeOffset.offset) {
+      // `descendant` is too big to be visible on screen in its entirety. Let's
+      // align it with the edge that requires the least amount of scrolling.
+      final double leadingEdgeDiff = (offset.pixels - leadingEdgeOffset.offset).abs();
+      final double trailingEdgeDiff = (offset.pixels - trailingEdgeOffset.offset).abs();
+      targetOffset = leadingEdgeDiff < trailingEdgeDiff ? leadingEdgeOffset : trailingEdgeOffset;
+    } else if (currentOffset > leadingEdgeOffset.offset) {
+      // `descendant` currently starts above the leading edge and can be shown
+      // fully on screen by scrolling down (which means: moving viewport up).
+      targetOffset = leadingEdgeOffset;
+    } else if (currentOffset < trailingEdgeOffset.offset) {
+      // `descendant currently ends below the trailing edge and can be shown
+      // fully on screen by scrolling up (which means: moving viewport down)
+      targetOffset = trailingEdgeOffset;
+    } else {
+      // `descendant` is between leading and trailing edge and hence already
+      //  fully shown on screen. No action necessary.
+      final Matrix4 transform = descendant.getTransformTo(viewport.parent as RenderObject);
+      return MatrixUtils.transformRect(transform, rect ?? descendant.paintBounds);
     }
-    // else: `child` is between leading and trailing edge and hence already
-    //     fully shown on screen. No action necessary.
+
+    assert(targetOffset != null);
+
+    offset.moveTo(targetOffset.offset, duration: duration, curve: curve);
+    return targetOffset.rect;
   }
 }
 
@@ -885,18 +1129,26 @@ class RenderViewport extends RenderViewportBase<SliverPhysicalContainerParentDat
   /// The [offset] must be specified. For testing purposes, consider passing a
   /// [new ViewportOffset.zero] or [new ViewportOffset.fixed].
   RenderViewport({
-    AxisDirection axisDirection: AxisDirection.down,
+    AxisDirection axisDirection = AxisDirection.down,
     @required AxisDirection crossAxisDirection,
     @required ViewportOffset offset,
-    double anchor: 0.0,
+    double anchor = 0.0,
     List<RenderSliver> children,
     RenderSliver center,
     double cacheExtent,
+    CacheExtentStyle cacheExtentStyle = CacheExtentStyle.pixel,
   }) : assert(anchor != null),
        assert(anchor >= 0.0 && anchor <= 1.0),
+       assert(cacheExtentStyle != CacheExtentStyle.viewport || cacheExtent != null),
        _anchor = anchor,
        _center = center,
-       super(axisDirection: axisDirection, crossAxisDirection: crossAxisDirection, offset: offset, cacheExtent: cacheExtent) {
+       super(
+         axisDirection: axisDirection,
+         crossAxisDirection: crossAxisDirection,
+         offset: offset,
+         cacheExtent: cacheExtent,
+         cacheExtentStyle: cacheExtentStyle,
+       ) {
     addAll(children);
     if (center == null && firstChild != null)
       _center = firstChild;
@@ -915,7 +1167,7 @@ class RenderViewport extends RenderViewportBase<SliverPhysicalContainerParentDat
   /// The semantic scrolling actions and the [SemanticsNode]s of scrollable
   /// children will be attached to the inner node, which itself is a child of
   /// the outer node.
-  static const SemanticsTag useTwoPaneSemantics = const SemanticsTag('RenderViewport.twoPane');
+  static const SemanticsTag useTwoPaneSemantics = SemanticsTag('RenderViewport.twoPane');
 
   /// When a top-level [SemanticsNode] below a [RenderAbstractViewport] is
   /// tagged with [excludeFromScrolling] it will not be part of the scrolling
@@ -930,12 +1182,12 @@ class RenderViewport extends RenderViewportBase<SliverPhysicalContainerParentDat
   /// bar) can tag its [SemanticsNode] with [excludeFromScrolling] to indicate
   /// that it should no longer be considered for semantic actions related to
   /// scrolling.
-  static const SemanticsTag excludeFromScrolling = const SemanticsTag('RenderViewport.excludeFromScrolling');
+  static const SemanticsTag excludeFromScrolling = SemanticsTag('RenderViewport.excludeFromScrolling');
 
   @override
   void setupParentData(RenderObject child) {
     if (child.parentData is! SliverPhysicalContainerParentData)
-      child.parentData = new SliverPhysicalContainerParentData();
+      child.parentData = SliverPhysicalContainerParentData();
   }
 
   /// The relative position of the zero scroll offset.
@@ -957,6 +1209,9 @@ class RenderViewport extends RenderViewportBase<SliverPhysicalContainerParentDat
   }
 
   /// The first child in the [GrowthDirection.forward] growth direction.
+  ///
+  /// This child that will be at the position defined by [anchor] when the
+  /// [offset.pixels] is `0`.
   ///
   /// Children after [center] will be placed in the [axisDirection] relative to
   /// the [center]. Children before [center] will be placed in the opposite of
@@ -982,22 +1237,26 @@ class RenderViewport extends RenderViewportBase<SliverPhysicalContainerParentDat
         switch (axis) {
           case Axis.vertical:
             if (!constraints.hasBoundedHeight) {
-              throw new FlutterError(
-                'Vertical viewport was given unbounded height.\n'
-                'Viewports expand in the scrolling direction to fill their container.'
-                'In this case, a vertical viewport was given an unlimited amount of '
-                'vertical space in which to expand. This situation typically happens '
-                'when a scrollable widget is nested inside another scrollable widget.\n'
-                'If this widget is always nested in a scrollable widget there '
-                'is no need to use a viewport because there will always be enough '
-                'vertical space for the children. In this case, consider using a '
-                'Column instead. Otherwise, consider using the "shrinkWrap" property '
-                '(or a ShrinkWrappingViewport) to size the height of the viewport '
-                'to the sum of the heights of its children.'
-              );
+              throw FlutterError.fromParts(<DiagnosticsNode>[
+                ErrorSummary('Vertical viewport was given unbounded height.'),
+                ErrorDescription(
+                  'Viewports expand in the scrolling direction to fill their container. '
+                  'In this case, a vertical viewport was given an unlimited amount of '
+                  'vertical space in which to expand. This situation typically happens '
+                  'when a scrollable widget is nested inside another scrollable widget.'
+                ),
+                ErrorHint(
+                  'If this widget is always nested in a scrollable widget there '
+                  'is no need to use a viewport because there will always be enough '
+                  'vertical space for the children. In this case, consider using a '
+                  'Column instead. Otherwise, consider using the "shrinkWrap" property '
+                  '(or a ShrinkWrappingViewport) to size the height of the viewport '
+                  'to the sum of the heights of its children.'
+                )
+              ]);
             }
             if (!constraints.hasBoundedWidth) {
-              throw new FlutterError(
+              throw FlutterError(
                 'Vertical viewport was given unbounded width.\n'
                 'Viewports expand in the cross axis to fill their container and '
                 'constrain their children to match their extent in the cross axis. '
@@ -1008,22 +1267,26 @@ class RenderViewport extends RenderViewportBase<SliverPhysicalContainerParentDat
             break;
           case Axis.horizontal:
             if (!constraints.hasBoundedWidth) {
-              throw new FlutterError(
-                'Horizontal viewport was given unbounded width.\n'
-                'Viewports expand in the scrolling direction to fill their container.'
-                'In this case, a horizontal viewport was given an unlimited amount of '
-                'horizontal space in which to expand. This situation typically happens '
-                'when a scrollable widget is nested inside another scrollable widget.\n'
-                'If this widget is always nested in a scrollable widget there '
-                'is no need to use a viewport because there will always be enough '
-                'horizontal space for the children. In this case, consider using a '
-                'Row instead. Otherwise, consider using the "shrinkWrap" property '
-                '(or a ShrinkWrappingViewport) to size the width of the viewport '
-                'to the sum of the widths of its children.'
-              );
+              throw FlutterError.fromParts(<DiagnosticsNode>[
+                ErrorSummary('Horizontal viewport was given unbounded width.'),
+                ErrorDescription(
+                  'Viewports expand in the scrolling direction to fill their container. '
+                  'In this case, a horizontal viewport was given an unlimited amount of '
+                  'horizontal space in which to expand. This situation typically happens '
+                  'when a scrollable widget is nested inside another scrollable widget.'
+                ),
+                ErrorHint(
+                  'If this widget is always nested in a scrollable widget there '
+                  'is no need to use a viewport because there will always be enough '
+                  'horizontal space for the children. In this case, consider using a '
+                  'Row instead. Otherwise, consider using the "shrinkWrap" property '
+                  '(or a ShrinkWrappingViewport) to size the width of the viewport '
+                  'to the sum of the widths of its children.'
+                )
+              ]);
             }
             if (!constraints.hasBoundedHeight) {
-              throw new FlutterError(
+              throw FlutterError(
                 'Horizontal viewport was given unbounded height.\n'
                 'Viewports expand in the cross axis to fill their container and '
                 'constrain their children to match their extent in the cross axis. '
@@ -1102,7 +1365,7 @@ class RenderViewport extends RenderViewportBase<SliverPhysicalContainerParentDat
     assert(() {
       if (count >= _maxLayoutCycles) {
         assert(count != 1);
-        throw new FlutterError(
+        throw FlutterError(
           'A RenderViewport exceeded its maximum number of layout cycles.\n'
           'RenderViewport render objects, during layout, can retry if either their '
           'slivers or their ViewportOffset decide that the offset should be corrected '
@@ -1139,13 +1402,22 @@ class RenderViewport extends RenderViewportBase<SliverPhysicalContainerParentDat
     // to the zero scroll offset (the line between the forward slivers and the
     // reverse slivers).
     final double centerOffset = mainAxisExtent * anchor - correctedOffset;
-    final double reverseDirectionRemainingPaintExtent = centerOffset.clamp(0.0, mainAxisExtent);
-    final double forwardDirectionRemainingPaintExtent = (mainAxisExtent - centerOffset).clamp(0.0, mainAxisExtent);
+    final double reverseDirectionRemainingPaintExtent = centerOffset.clamp(0.0, mainAxisExtent) as double;
+    final double forwardDirectionRemainingPaintExtent = (mainAxisExtent - centerOffset).clamp(0.0, mainAxisExtent) as double;
 
-    final double fullCacheExtent = mainAxisExtent + 2 * cacheExtent;
-    final double centerCacheOffset = centerOffset + cacheExtent;
-    final double reverseDirectionRemainingCacheExtent = centerCacheOffset.clamp(0.0, fullCacheExtent);
-    final double forwardDirectionRemainingCacheExtent = (fullCacheExtent - centerCacheOffset).clamp(0.0, fullCacheExtent);
+    switch (cacheExtentStyle) {
+      case CacheExtentStyle.pixel:
+        _calculatedCacheExtent = cacheExtent;
+        break;
+      case CacheExtentStyle.viewport:
+        _calculatedCacheExtent = mainAxisExtent * cacheExtent;
+        break;
+    }
+
+    final double fullCacheExtent = mainAxisExtent + 2 * _calculatedCacheExtent;
+    final double centerCacheOffset = centerOffset + _calculatedCacheExtent;
+    final double reverseDirectionRemainingCacheExtent = centerCacheOffset.clamp(0.0, fullCacheExtent) as double;
+    final double forwardDirectionRemainingCacheExtent = (fullCacheExtent - centerCacheOffset).clamp(0.0, fullCacheExtent) as double;
 
     final RenderSliver leadingNegativeChild = childBefore(center);
 
@@ -1162,7 +1434,7 @@ class RenderViewport extends RenderViewportBase<SliverPhysicalContainerParentDat
         growthDirection: GrowthDirection.reverse,
         advance: childBefore,
         remainingCacheExtent: reverseDirectionRemainingCacheExtent,
-        cacheOrigin: (mainAxisExtent - centerOffset).clamp(-cacheExtent, 0.0),
+        cacheOrigin: (mainAxisExtent - centerOffset).clamp(-_calculatedCacheExtent, 0.0) as double,
       );
       if (result != 0.0)
         return -result;
@@ -1180,7 +1452,7 @@ class RenderViewport extends RenderViewportBase<SliverPhysicalContainerParentDat
       growthDirection: GrowthDirection.forward,
       advance: childAfter,
       remainingCacheExtent: forwardDirectionRemainingCacheExtent,
-      cacheOrigin: centerOffset.clamp(-cacheExtent, 0.0),
+      cacheOrigin: centerOffset.clamp(-_calculatedCacheExtent, 0.0) as double,
     );
   }
 
@@ -1203,13 +1475,13 @@ class RenderViewport extends RenderViewportBase<SliverPhysicalContainerParentDat
 
   @override
   void updateChildLayoutOffset(RenderSliver child, double layoutOffset, GrowthDirection growthDirection) {
-    final SliverPhysicalParentData childParentData = child.parentData;
+    final SliverPhysicalParentData childParentData = child.parentData as SliverPhysicalParentData;
     childParentData.paintOffset = computeAbsolutePaintOffset(child, layoutOffset, growthDirection);
   }
 
   @override
   Offset paintOffsetOf(RenderSliver child) {
-    final SliverPhysicalParentData childParentData = child.parentData;
+    final SliverPhysicalParentData childParentData = child.parentData as SliverPhysicalParentData;
     return childParentData.paintOffset;
   }
 
@@ -1268,7 +1540,7 @@ class RenderViewport extends RenderViewportBase<SliverPhysicalContainerParentDat
   @override
   void applyPaintTransform(RenderObject child, Matrix4 transform) {
     assert(child != null);
-    final SliverPhysicalParentData childParentData = child.parentData;
+    final SliverPhysicalParentData childParentData = child.parentData as SliverPhysicalParentData;
     childParentData.applyPaintTransform(transform);
   }
 
@@ -1276,7 +1548,7 @@ class RenderViewport extends RenderViewportBase<SliverPhysicalContainerParentDat
   double computeChildMainAxisPosition(RenderSliver child, double parentMainAxisPosition) {
     assert(child != null);
     assert(child.constraints != null);
-    final SliverPhysicalParentData childParentData = child.parentData;
+    final SliverPhysicalParentData childParentData = child.parentData as SliverPhysicalParentData;
     switch (applyGrowthDirectionToAxisDirection(child.constraints.axisDirection, child.constraints.growthDirection)) {
       case AxisDirection.down:
         return parentMainAxisPosition - childParentData.paintOffset.dy;
@@ -1348,7 +1620,7 @@ class RenderViewport extends RenderViewportBase<SliverPhysicalContainerParentDat
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(new DoubleProperty('anchor', anchor));
+    properties.add(DoubleProperty('anchor', anchor));
   }
 }
 
@@ -1372,7 +1644,7 @@ class RenderViewport extends RenderViewportBase<SliverPhysicalContainerParentDat
 ///
 /// See also:
 ///
-///  * [RenderViewport], a viewport that does not shrink-wrap its contents
+///  * [RenderViewport], a viewport that does not shrink-wrap its contents.
 ///  * [RenderSliver], which explains more about the Sliver protocol.
 ///  * [RenderBox], which explains more about the Box protocol.
 ///  * [RenderSliverToBoxAdapter], which allows a [RenderBox] object to be
@@ -1384,7 +1656,7 @@ class RenderShrinkWrappingViewport extends RenderViewportBase<SliverLogicalConta
   /// The [offset] must be specified. For testing purposes, consider passing a
   /// [new ViewportOffset.zero] or [new ViewportOffset.fixed].
   RenderShrinkWrappingViewport({
-    AxisDirection axisDirection: AxisDirection.down,
+    AxisDirection axisDirection = AxisDirection.down,
     @required AxisDirection crossAxisDirection,
     @required ViewportOffset offset,
     List<RenderSliver> children,
@@ -1395,21 +1667,25 @@ class RenderShrinkWrappingViewport extends RenderViewportBase<SliverLogicalConta
   @override
   void setupParentData(RenderObject child) {
     if (child.parentData is! SliverLogicalContainerParentData)
-      child.parentData = new SliverLogicalContainerParentData();
+      child.parentData = SliverLogicalContainerParentData();
   }
 
   @override
   bool debugThrowIfNotCheckingIntrinsics() {
     assert(() {
       if (!RenderObject.debugCheckingIntrinsics) {
-        throw new FlutterError(
-          '$runtimeType does not support returning intrinsic dimensions.\n'
-          'Calculating the intrinsic dimensions would require instantiating every child of '
-          'the viewport, which defeats the point of viewports being lazy.\n'
-          'If you are merely trying to shrink-wrap the viewport in the main axis direction, '
-          'you should be able to achieve that effect by just giving the viewport loose '
-          'constraints, without needing to measure its intrinsic dimensions.'
-        );
+        throw FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary('$runtimeType does not support returning intrinsic dimensions.'),
+          ErrorDescription(
+           'Calculating the intrinsic dimensions would require instantiating every child of '
+           'the viewport, which defeats the point of viewports being lazy.'
+          ),
+          ErrorHint(
+            'If you are merely trying to shrink-wrap the viewport in the main axis direction, '
+            'you should be able to achieve that effect by just giving the viewport loose '
+            'constraints, without needing to measure its intrinsic dimensions.'
+          )
+        ]);
       }
       return true;
     }());
@@ -1423,15 +1699,16 @@ class RenderShrinkWrappingViewport extends RenderViewportBase<SliverLogicalConta
 
   @override
   void performLayout() {
+    final BoxConstraints constraints = this.constraints;
     if (firstChild == null) {
       switch (axis) {
         case Axis.vertical:
           assert(constraints.hasBoundedWidth);
-          size = new Size(constraints.maxWidth, constraints.minHeight);
+          size = Size(constraints.maxWidth, constraints.minHeight);
           break;
         case Axis.horizontal:
           assert(constraints.hasBoundedHeight);
-          size = new Size(constraints.minWidth, constraints.maxHeight);
+          size = Size(constraints.minWidth, constraints.maxHeight);
           break;
       }
       offset.applyViewportDimension(0.0);
@@ -1490,6 +1767,11 @@ class RenderShrinkWrappingViewport extends RenderViewportBase<SliverLogicalConta
   }
 
   double _attemptLayout(double mainAxisExtent, double crossAxisExtent, double correctedOffset) {
+    // We can't assert mainAxisExtent is finite, because it could be infinite if
+    // it is within a column or row for example. In such a case, there's not
+    // even any scrolling to do, although some scroll physics (i.e.
+    // BouncingScrollPhysics) could still temporarily scroll the content in a
+    // simulation.
     assert(!mainAxisExtent.isNaN);
     assert(mainAxisExtent >= 0.0);
     assert(crossAxisExtent.isFinite);
@@ -1528,13 +1810,13 @@ class RenderShrinkWrappingViewport extends RenderViewportBase<SliverLogicalConta
   @override
   void updateChildLayoutOffset(RenderSliver child, double layoutOffset, GrowthDirection growthDirection) {
     assert(growthDirection == GrowthDirection.forward);
-    final SliverLogicalParentData childParentData = child.parentData;
+    final SliverLogicalParentData childParentData = child.parentData as SliverLogicalParentData;
     childParentData.layoutOffset = layoutOffset;
   }
 
   @override
   Offset paintOffsetOf(RenderSliver child) {
-    final SliverLogicalParentData childParentData = child.parentData;
+    final SliverLogicalParentData childParentData = child.parentData as SliverLogicalParentData;
     return computeAbsolutePaintOffset(child, childParentData.layoutOffset, GrowthDirection.forward);
   }
 
@@ -1567,7 +1849,7 @@ class RenderShrinkWrappingViewport extends RenderViewportBase<SliverLogicalConta
   @override
   void applyPaintTransform(RenderObject child, Matrix4 transform) {
     assert(child != null);
-    final Offset offset = paintOffsetOf(child);
+    final Offset offset = paintOffsetOf(child as RenderSliver);
     transform.translate(offset.dx, offset.dy);
   }
 
@@ -1576,7 +1858,7 @@ class RenderShrinkWrappingViewport extends RenderViewportBase<SliverLogicalConta
     assert(child != null);
     assert(child.constraints != null);
     assert(hasSize);
-    final SliverLogicalParentData childParentData = child.parentData;
+    final SliverLogicalParentData childParentData = child.parentData as SliverLogicalParentData;
     switch (applyGrowthDirectionToAxisDirection(child.constraints.axisDirection, child.constraints.growthDirection)) {
       case AxisDirection.down:
       case AxisDirection.right:

@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -12,7 +12,7 @@ abstract class PageRoute<T> extends ModalRoute<T> {
   /// Creates a modal route that replaces the entire screen.
   PageRoute({
     RouteSettings settings,
-    this.fullscreenDialog: false,
+    this.fullscreenDialog = false,
   }) : super(settings: settings);
 
   /// Whether this page route is a full-screen dialog.
@@ -34,27 +34,7 @@ abstract class PageRoute<T> extends ModalRoute<T> {
 
   @override
   bool canTransitionFrom(TransitionRoute<dynamic> previousRoute) => previousRoute is PageRoute;
-
-  @override
-  AnimationController createAnimationController() {
-    final AnimationController controller = super.createAnimationController();
-    if (settings.isInitialRoute)
-      controller.value = 1.0;
-    return controller;
-  }
 }
-
-/// Signature for the [PageRouteBuilder] function that builds the route's
-/// primary contents.
-///
-/// See [ModalRoute.buildPage] for complete definition of the parameters.
-typedef Widget RoutePageBuilder(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation);
-
-/// Signature for the [PageRouteBuilder] function that builds the route's
-/// transitions.
-///
-/// See [ModalRoute.buildTransitions] for complete definition of the parameters.
-typedef Widget RouteTransitionsBuilder(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child);
 
 Widget _defaultTransitionsBuilder(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
   return child;
@@ -68,23 +48,25 @@ class PageRouteBuilder<T> extends PageRoute<T> {
   /// Creates a route that delegates to builder callbacks.
   ///
   /// The [pageBuilder], [transitionsBuilder], [opaque], [barrierDismissible],
-  /// and [maintainState] arguments must not be null.
+  /// [maintainState], and [fullscreenDialog] arguments must not be null.
   PageRouteBuilder({
     RouteSettings settings,
     @required this.pageBuilder,
-    this.transitionsBuilder: _defaultTransitionsBuilder,
-    this.transitionDuration: const Duration(milliseconds: 300),
-    this.opaque: true,
-    this.barrierDismissible: false,
+    this.transitionsBuilder = _defaultTransitionsBuilder,
+    this.transitionDuration = const Duration(milliseconds: 300),
+    this.opaque = true,
+    this.barrierDismissible = false,
     this.barrierColor,
     this.barrierLabel,
-    this.maintainState: true,
+    this.maintainState = true,
+    bool fullscreenDialog = false,
   }) : assert(pageBuilder != null),
        assert(transitionsBuilder != null),
+       assert(opaque != null),
        assert(barrierDismissible != null),
        assert(maintainState != null),
-       assert(opaque != null),
-       super(settings: settings);
+       assert(fullscreenDialog != null),
+       super(settings: settings, fullscreenDialog: fullscreenDialog);
 
   /// Used build the route's primary contents.
   ///

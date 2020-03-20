@@ -1,6 +1,8 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+
+import 'package:flutter/foundation.dart';
 
 import 'framework.dart';
 
@@ -22,14 +24,14 @@ import 'framework.dart';
 /// tabs' string labels.
 ///
 /// ```dart
-/// new TabBarView(
+/// TabBarView(
 ///   children: myTabs.map((Tab tab) {
-///     new MyScrollableTabView(
-///       key: new PageStorageKey<String>(tab.text), // like 'Tab 1'
+///     MyScrollableTabView(
+///       key: PageStorageKey<String>(tab.text), // like 'Tab 1'
 ///       tab: tab,
-///    ),
-///  }),
-///)
+///     ),
+///   }),
+/// )
 /// ```
 class PageStorageKey<T> extends ValueKey<T> {
   /// Creates a [ValueKey] that defines where [PageStorage] values will be saved.
@@ -45,15 +47,11 @@ class _StorageEntryIdentifier {
   bool get isNotEmpty => keys.isNotEmpty;
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (other.runtimeType != runtimeType)
       return false;
-    final _StorageEntryIdentifier typedOther = other;
-    for (int index = 0; index < keys.length; index += 1) {
-      if (keys[index] != typedOther.keys[index])
-        return false;
-    }
-    return true;
+    return other is _StorageEntryIdentifier
+        && listEquals<PageStorageKey<dynamic>>(other.keys, keys);
   }
 
   @override
@@ -89,7 +87,7 @@ class PageStorageBucket {
   }
 
   _StorageEntryIdentifier _computeIdentifier(BuildContext context) {
-    return new _StorageEntryIdentifier(_allKeys(context));
+    return _StorageEntryIdentifier(_allKeys(context));
   }
 
   Map<Object, dynamic> _storage;
@@ -139,7 +137,7 @@ class PageStorage extends StatelessWidget {
   const PageStorage({
     Key key,
     @required this.bucket,
-    @required this.child
+    @required this.child,
   }) : assert(bucket != null),
        super(key: key);
 
@@ -161,7 +159,7 @@ class PageStorage extends StatelessWidget {
   /// PageStorageBucket bucket = PageStorage.of(context);
   /// ```
   static PageStorageBucket of(BuildContext context) {
-    final PageStorage widget = context.ancestorWidgetOfExactType(PageStorage);
+    final PageStorage widget = context.findAncestorWidgetOfExactType<PageStorage>();
     return widget?.bucket;
   }
 

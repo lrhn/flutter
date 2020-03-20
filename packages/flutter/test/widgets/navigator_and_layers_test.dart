@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -30,29 +30,29 @@ void main() {
     final List<String> log = <String>[];
     log.add('0');
     await tester.pumpWidget(
-      new MaterialApp(
+      MaterialApp(
         routes: <String, WidgetBuilder>{
-          '/': (BuildContext context) => new RepaintBoundary(
-            child: new Container(
-              child: new RepaintBoundary(
-                child: new FlipWidget(
-                  left: new CustomPaint(
-                    painter: new TestCustomPainter(
+          '/': (BuildContext context) => RepaintBoundary(
+            child: Container(
+              child: RepaintBoundary(
+                child: FlipWidget(
+                  left: CustomPaint(
+                    painter: TestCustomPainter(
                       log: log,
-                      name: 'left'
+                      name: 'left',
                     ),
                   ),
-                  right: new CustomPaint(
-                    painter: new TestCustomPainter(
+                  right: CustomPaint(
+                    painter: TestCustomPainter(
                       log: log,
-                      name: 'right'
+                      name: 'right',
                     ),
                   ),
                 ),
               ),
             ),
           ),
-          '/second': (BuildContext context) => new Container(),
+          '/second': (BuildContext context) => Container(),
         },
       ),
     );

@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/animation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 
 // How close the begin and end points must be to an axis to be considered
@@ -50,14 +51,14 @@ class MaterialPointArcTween extends Tween<Offset> {
     final double deltaX = delta.dx.abs();
     final double deltaY = delta.dy.abs();
     final double distanceFromAtoB = delta.distance;
-    final Offset c = new Offset(end.dx, begin.dy);
+    final Offset c = Offset(end.dx, begin.dy);
 
     double sweepAngle() => 2.0 * math.asin(distanceFromAtoB / (2.0 * _radius));
 
     if (deltaX > _kOnAxisDelta && deltaY > _kOnAxisDelta) {
       if (deltaX < deltaY) {
         _radius = distanceFromAtoB * distanceFromAtoB / (c - begin).distance / 2.0;
-        _center = new Offset(end.dx + _radius * (begin.dx - end.dx).sign, end.dy);
+        _center = Offset(end.dx + _radius * (begin.dx - end.dx).sign, end.dy);
         if (begin.dx < end.dx) {
           _beginAngle = sweepAngle() * (begin.dy - end.dy).sign;
           _endAngle = 0.0;
@@ -67,7 +68,7 @@ class MaterialPointArcTween extends Tween<Offset> {
         }
       } else {
         _radius = distanceFromAtoB * distanceFromAtoB / (c - end).distance / 2.0;
-        _center = new Offset(begin.dx, begin.dy + (end.dy - begin.dy).sign * _radius);
+        _center = Offset(begin.dx, begin.dy + (end.dy - begin.dy).sign * _radius);
         if (begin.dy < end.dy) {
           _beginAngle = -math.pi / 2.0;
           _endAngle = _beginAngle + sweepAngle() * (end.dx - begin.dx).sign;
@@ -164,12 +165,12 @@ class MaterialPointArcTween extends Tween<Offset> {
     final double angle = lerpDouble(_beginAngle, _endAngle, t);
     final double x = math.cos(angle) * _radius;
     final double y = math.sin(angle) * _radius;
-    return _center + new Offset(x, y);
+    return _center + Offset(x, y);
   }
 
   @override
   String toString() {
-    return '$runtimeType($begin \u2192 $end; center=$center, radius=$radius, beginAngle=$beginAngle, endAngle=$endAngle)';
+    return '${objectRuntimeType(this, 'MaterialPointArcTween')}($begin \u2192 $end; center=$center, radius=$radius, beginAngle=$beginAngle, endAngle=$endAngle)';
   }
 }
 
@@ -186,21 +187,21 @@ class _Diagonal {
   final _CornerId endId;
 }
 
-const List<_Diagonal> _allDiagonals = const <_Diagonal>[
-  const _Diagonal(_CornerId.topLeft, _CornerId.bottomRight),
-  const _Diagonal(_CornerId.bottomRight, _CornerId.topLeft),
-  const _Diagonal(_CornerId.topRight, _CornerId.bottomLeft),
-  const _Diagonal(_CornerId.bottomLeft, _CornerId.topRight),
+const List<_Diagonal> _allDiagonals = <_Diagonal>[
+  _Diagonal(_CornerId.topLeft, _CornerId.bottomRight),
+  _Diagonal(_CornerId.bottomRight, _CornerId.topLeft),
+  _Diagonal(_CornerId.topRight, _CornerId.bottomLeft),
+  _Diagonal(_CornerId.bottomLeft, _CornerId.topRight),
 ];
 
-typedef dynamic _KeyFunc<T>(T input);
+typedef _KeyFunc<T> = double Function(T input);
 
 // Select the element for which the key function returns the maximum value.
 T _maxBy<T>(Iterable<T> input, _KeyFunc<T> keyFunc) {
   T maxValue;
-  dynamic maxKey;
-  for (T value in input) {
-    final dynamic key = keyFunc(value);
+  double maxKey;
+  for (final T value in input) {
+    final double key = keyFunc(value);
     if (maxKey == null || key > maxKey) {
       maxValue = value;
       maxKey = key;
@@ -224,7 +225,7 @@ T _maxBy<T>(Iterable<T> input, _KeyFunc<T> keyFunc) {
 ///  * [MaterialRectCenterArcTween], which interpolates a rect along a circular
 ///    arc between the begin and end [Rect]'s centers.
 ///  * [Tween], for a discussion on how to use interpolation objects.
-///  * [MaterialPointArcTween], the analogue for [Offset] interpolation.
+///  * [MaterialPointArcTween], the analog for [Offset] interpolation.
 ///  * [RectTween], which does a linear rectangle interpolation.
 ///  * [Hero.createRectTween], which can be used to specify the tween that defines
 ///    a hero's path.
@@ -246,13 +247,13 @@ class MaterialRectArcTween extends RectTween {
     assert(end != null);
     final Offset centersVector = end.center - begin.center;
     final _Diagonal diagonal = _maxBy<_Diagonal>(_allDiagonals, (_Diagonal d) => _diagonalSupport(centersVector, d));
-    _beginArc = new MaterialPointArcTween(
+    _beginArc = MaterialPointArcTween(
       begin: _cornerFor(begin, diagonal.beginId),
-      end: _cornerFor(end, diagonal.beginId)
+      end: _cornerFor(end, diagonal.beginId),
     );
-    _endArc = new MaterialPointArcTween(
+    _endArc = MaterialPointArcTween(
       begin: _cornerFor(begin, diagonal.endId),
-      end: _cornerFor(end, diagonal.endId)
+      end: _cornerFor(end, diagonal.endId),
     );
     _dirty = false;
   }
@@ -319,12 +320,12 @@ class MaterialRectArcTween extends RectTween {
       return begin;
     if (t == 1.0)
       return end;
-    return new Rect.fromPoints(_beginArc.lerp(t), _endArc.lerp(t));
+    return Rect.fromPoints(_beginArc.lerp(t), _endArc.lerp(t));
   }
 
   @override
   String toString() {
-    return '$runtimeType($begin \u2192 $end; beginArc=$beginArc, endArc=$endArc)';
+    return '${objectRuntimeType(this, 'MaterialRectArcTween')}($begin \u2192 $end; beginArc=$beginArc, endArc=$endArc)';
   }
 }
 
@@ -340,7 +341,7 @@ class MaterialRectArcTween extends RectTween {
 ///  * [MaterialRectArcTween], A [Tween] that interpolates a [Rect] by having
 ///    its opposite corners follow circular arcs.
 ///  * [Tween], for a discussion on how to use interpolation objects.
-///  * [MaterialPointArcTween], the analogue for [Offset] interpolation.
+///  * [MaterialPointArcTween], the analog for [Offset] interpolation.
 ///  * [RectTween], which does a linear rectangle interpolation.
 ///  * [Hero.createRectTween], which can be used to specify the tween that defines
 ///    a hero's path.
@@ -360,7 +361,7 @@ class MaterialRectCenterArcTween extends RectTween {
   void _initialize() {
     assert(begin != null);
     assert(end != null);
-    _centerArc = new MaterialPointArcTween(
+    _centerArc = MaterialPointArcTween(
       begin: begin.center,
       end: end.center,
     );
@@ -405,11 +406,11 @@ class MaterialRectCenterArcTween extends RectTween {
     final Offset center = _centerArc.lerp(t);
     final double width = lerpDouble(begin.width, end.width, t);
     final double height = lerpDouble(begin.height, end.height, t);
-    return new Rect.fromLTWH(center.dx - width / 2.0, center.dy - height / 2.0, width, height);
+    return Rect.fromLTWH(center.dx - width / 2.0, center.dy - height / 2.0, width, height);
   }
 
   @override
   String toString() {
-    return '$runtimeType($begin \u2192 $end; centerArc=$centerArc)';
+    return '${objectRuntimeType(this, 'MaterialRectCenterArcTween')}($begin \u2192 $end; centerArc=$centerArc)';
   }
 }

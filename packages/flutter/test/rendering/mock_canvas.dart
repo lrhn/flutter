@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -28,7 +28,7 @@ import 'recording_canvas.dart';
 /// To specify the pattern, call the methods on the returned object. For example:
 ///
 /// ```dart
-///  expect(myRenderObject, paints..circle(radius: 10.0)..circle(radius: 20.0));
+/// expect(myRenderObject, paints..circle(radius: 10.0)..circle(radius: 20.0));
 /// ```
 ///
 /// This particular pattern would verify that the render object `myRenderObject`
@@ -40,13 +40,18 @@ import 'recording_canvas.dart';
 /// To match something which paints nothing, see [paintsNothing].
 ///
 /// To match something which asserts instead of painting, see [paintsAssertion].
-PaintPattern get paints => new _TestRecordingCanvasPatternMatcher();
+PaintPattern get paints => _TestRecordingCanvasPatternMatcher();
 
 /// Matches objects or functions that does not paint anything on the canvas.
-Matcher get paintsNothing => new _TestRecordingCanvasPaintsNothingMatcher();
+Matcher get paintsNothing => _TestRecordingCanvasPaintsNothingMatcher();
 
 /// Matches objects or functions that assert when they try to paint.
-Matcher get paintsAssertion => new _TestRecordingCanvasPaintsAssertionMatcher();
+Matcher get paintsAssertion => _TestRecordingCanvasPaintsAssertionMatcher();
+
+/// Matches objects or functions that draw `methodName` exactly `count` number of times
+Matcher paintsExactlyCountTimes(Symbol methodName, int count) {
+  return _TestRecordingCanvasPaintsCountMatcher(methodName, count);
+}
 
 /// Signature for the [PaintPattern.something] and [PaintPattern.everything]
 /// predicate argument.
@@ -59,13 +64,13 @@ Matcher get paintsAssertion => new _TestRecordingCanvasPaintsAssertionMatcher();
 /// ```dart
 /// if (methodName == #drawCircle) { ... }
 /// ```
-typedef bool PaintPatternPredicate(Symbol methodName, List<dynamic> arguments);
+typedef PaintPatternPredicate = bool Function(Symbol methodName, List<dynamic> arguments);
 
 /// The signature of [RenderObject.paint] functions.
-typedef void _ContextPainterFunction(PaintingContext context, Offset offset);
+typedef _ContextPainterFunction = void Function(PaintingContext context, Offset offset);
 
 /// The signature of functions that paint directly on a canvas.
-typedef void _CanvasPainterFunction(Canvas canvas);
+typedef _CanvasPainterFunction = void Function(Canvas canvas);
 
 /// Builder interface for patterns used to match display lists (canvas calls).
 ///
@@ -117,7 +122,11 @@ abstract class PaintPattern {
   /// Calls are skipped until a call to [Canvas.save] is found. If none is
   /// found, the matcher fails.
   ///
-  /// See also: [restore], [saveRestore].
+  /// See also:
+  ///
+  ///  * [restore], which indicates that a restore is expected next.
+  ///  * [saveRestore], which indicates that a matching pair of save/restore
+  ///    calls is expected next.
   void save();
 
   /// Indicates that a restore is expected next.
@@ -125,7 +134,11 @@ abstract class PaintPattern {
   /// Calls are skipped until a call to [Canvas.restore] is found. If none is
   /// found, the matcher fails.
   ///
-  /// See also: [save], [saveRestore].
+  /// See also:
+  ///
+  ///  * [save], which indicates that a save is expected next.
+  ///  * [saveRestore], which indicates that a matching pair of save/restore
+  ///    calls is expected next.
   void restore();
 
   /// Indicates that a matching pair of save/restore calls is expected next.
@@ -134,7 +147,10 @@ abstract class PaintPattern {
   /// skipped until the matching [Canvas.restore] call is found. If no matching
   /// pair of calls could be found, the matcher fails.
   ///
-  /// See also: [save], [restore].
+  /// See also:
+  ///
+  ///  * [save], which indicates that a save is expected next.
+  ///  * [restore], which indicates that a restore is expected next.
   void saveRestore();
 
   /// Indicates that a rectangular clip is expected next.
@@ -159,7 +175,7 @@ abstract class PaintPattern {
   ///
   /// Any calls made between the last matched call (if any) and the
   /// [Canvas.clipPath] call are ignored.
-  void clipPath({Matcher pathMatcher});
+  void clipPath({ Matcher pathMatcher });
 
   /// Indicates that a rectangle is expected next.
   ///
@@ -420,10 +436,10 @@ abstract class PaintPattern {
 /// Matches a [Path] that contains (as defined by [Path.contains]) the given
 /// `includes` points and does not contain the given `excludes` points.
 Matcher isPathThat({
-  Iterable<Offset> includes: const <Offset>[],
-  Iterable<Offset> excludes: const <Offset>[],
+  Iterable<Offset> includes = const <Offset>[],
+  Iterable<Offset> excludes = const <Offset>[],
 }) {
-  return new _PathMatcher(includes.toList(), excludes.toList());
+  return _PathMatcher(includes.toList(), excludes.toList());
 }
 
 class _PathMatcher extends Matcher {
@@ -438,16 +454,15 @@ class _PathMatcher extends Matcher {
       matchState[this] = 'The given object ($object) was not a Path.';
       return false;
     }
-    final Path path = object;
-    final List<String> errors = <String>[];
-    for (Offset offset in includes) {
-      if (!path.contains(offset))
-        errors.add('Offset $offset should be inside the path, but is not.');
-    }
-    for (Offset offset in excludes) {
-      if (path.contains(offset))
-        errors.add('Offset $offset should be outside the path, but is not.');
-    }
+    final Path path = object as Path;
+    final List<String> errors = <String>[
+      for (final Offset offset in includes)
+        if (!path.contains(offset))
+          'Offset $offset should be inside the path, but is not.',
+      for (final Offset offset in excludes)
+        if (path.contains(offset))
+          'Offset $offset should be outside the path, but is not.',
+    ];
     if (errors.isEmpty)
       return true;
     matchState[this] = 'Not all the given points were inside or outside the path as expected:\n  ${errors.join("\n  ")}';
@@ -472,7 +487,7 @@ class _PathMatcher extends Matcher {
     Map<dynamic, dynamic> matchState,
     bool verbose,
   ) {
-    return description.add(matchState[this]);
+    return description.add(matchState[this] as String);
   }
 }
 
@@ -493,7 +508,7 @@ bool _evaluatePainter(Object object, Canvas canvas, PaintingContext context) {
   } else {
     if (object is Finder) {
       TestAsyncUtils.guardSync();
-      final Finder finder = object;
+      final Finder finder = object as Finder;
       object = finder.evaluate().single.renderObject;
     }
     if (object is RenderObject) {
@@ -509,9 +524,9 @@ bool _evaluatePainter(Object object, Canvas canvas, PaintingContext context) {
 abstract class _TestRecordingCanvasMatcher extends Matcher {
   @override
   bool matches(Object object, Map<dynamic, dynamic> matchState) {
-    final TestRecordingCanvas canvas = new TestRecordingCanvas();
-    final TestRecordingPaintingContext context = new TestRecordingPaintingContext(canvas);
-    final StringBuffer description = new StringBuffer();
+    final TestRecordingCanvas canvas = TestRecordingCanvas();
+    final TestRecordingPaintingContext context = TestRecordingPaintingContext(canvas);
+    final StringBuffer description = StringBuffer();
     String prefixMessage = 'unexpectedly failed.';
     bool result = false;
     try {
@@ -531,7 +546,7 @@ abstract class _TestRecordingCanvasMatcher extends Matcher {
     if (!result) {
       if (canvas.invocations.isNotEmpty) {
         description.write('The complete display list was:');
-        for (RecordedInvocation call in canvas.invocations)
+        for (final RecordedInvocation call in canvas.invocations)
           description.write('\n  * $call');
       }
       matchState[this] = '$prefixMessage\n$description';
@@ -548,7 +563,35 @@ abstract class _TestRecordingCanvasMatcher extends Matcher {
     Map<dynamic, dynamic> matchState,
     bool verbose,
   ) {
-    return description.add(matchState[this]);
+    return description.add(matchState[this] as String);
+  }
+}
+
+class _TestRecordingCanvasPaintsCountMatcher extends _TestRecordingCanvasMatcher {
+  _TestRecordingCanvasPaintsCountMatcher(Symbol methodName, int count)
+    : _methodName = methodName,
+      _count = count;
+
+  final Symbol _methodName;
+  final int _count;
+
+  @override
+  Description describe(Description description) {
+    return description.add('Object or closure painting $_methodName exactly $_count times');
+  }
+
+  @override
+  bool _evaluatePredicates(Iterable<RecordedInvocation> calls, StringBuffer description) {
+    int count = 0;
+    for (final RecordedInvocation call in calls) {
+      if (call.invocation.isMethod && call.invocation.memberName == _methodName) {
+        count++;
+      }
+    }
+    if (count != _count) {
+      description.write('It painted $_methodName $count times instead of $_count times.');
+    }
+    return count == _count;
   }
 }
 
@@ -570,7 +613,7 @@ class _TestRecordingCanvasPaintsNothingMatcher extends _TestRecordingCanvasMatch
     return false;
   }
 
-  static const List<Symbol> _nonPaintingOperations = const <Symbol> [
+  static const List<Symbol> _nonPaintingOperations = <Symbol> [
     #save,
     #restore,
   ];
@@ -586,9 +629,9 @@ class _TestRecordingCanvasPaintsNothingMatcher extends _TestRecordingCanvasMatch
 class _TestRecordingCanvasPaintsAssertionMatcher extends Matcher {
   @override
   bool matches(Object object, Map<dynamic, dynamic> matchState) {
-    final TestRecordingCanvas canvas = new TestRecordingCanvas();
-    final TestRecordingPaintingContext context = new TestRecordingPaintingContext(canvas);
-    final StringBuffer description = new StringBuffer();
+    final TestRecordingCanvas canvas = TestRecordingCanvas();
+    final TestRecordingPaintingContext context = TestRecordingPaintingContext(canvas);
+    final StringBuffer description = StringBuffer();
     String prefixMessage = 'unexpectedly failed.';
     bool result = false;
     try {
@@ -608,7 +651,7 @@ class _TestRecordingCanvasPaintsAssertionMatcher extends Matcher {
     if (!result) {
       if (canvas.invocations.isNotEmpty) {
         description.write('The complete display list was:');
-        for (RecordedInvocation call in canvas.invocations)
+        for (final RecordedInvocation call in canvas.invocations)
           description.write('\n  * $call');
       }
       matchState[this] = '$prefixMessage\n$description';
@@ -628,7 +671,7 @@ class _TestRecordingCanvasPaintsAssertionMatcher extends Matcher {
     Map<dynamic, dynamic> matchState,
     bool verbose,
   ) {
-    return description.add(matchState[this]);
+    return description.add(matchState[this] as String);
   }
 }
 
@@ -637,117 +680,117 @@ class _TestRecordingCanvasPatternMatcher extends _TestRecordingCanvasMatcher imp
 
   @override
   void transform({ dynamic matrix4 }) {
-    _predicates.add(new _FunctionPaintPredicate(#transform, <dynamic>[matrix4]));
+    _predicates.add(_FunctionPaintPredicate(#transform, <dynamic>[matrix4]));
   }
 
   @override
   void translate({ double x, double y }) {
-    _predicates.add(new _FunctionPaintPredicate(#translate, <dynamic>[x, y]));
+    _predicates.add(_FunctionPaintPredicate(#translate, <dynamic>[x, y]));
   }
 
   @override
   void scale({ double x, double y }) {
-    _predicates.add(new _FunctionPaintPredicate(#scale, <dynamic>[x, y]));
+    _predicates.add(_FunctionPaintPredicate(#scale, <dynamic>[x, y]));
   }
 
   @override
   void rotate({ double angle }) {
-    _predicates.add(new _FunctionPaintPredicate(#rotate, <dynamic>[angle]));
+    _predicates.add(_FunctionPaintPredicate(#rotate, <dynamic>[angle]));
   }
 
   @override
   void save() {
-    _predicates.add(new _FunctionPaintPredicate(#save, <dynamic>[]));
+    _predicates.add(_FunctionPaintPredicate(#save, <dynamic>[]));
   }
 
   @override
   void restore() {
-    _predicates.add(new _FunctionPaintPredicate(#restore, <dynamic>[]));
+    _predicates.add(_FunctionPaintPredicate(#restore, <dynamic>[]));
   }
 
   @override
   void saveRestore() {
-    _predicates.add(new _SaveRestorePairPaintPredicate());
+    _predicates.add(_SaveRestorePairPaintPredicate());
   }
 
   @override
   void clipRect({ Rect rect }) {
-    _predicates.add(new _FunctionPaintPredicate(#clipRect, <dynamic>[rect]));
+    _predicates.add(_FunctionPaintPredicate(#clipRect, <dynamic>[rect]));
   }
 
   @override
-  void clipPath({Matcher pathMatcher}) {
-    _predicates.add(new _FunctionPaintPredicate(#clipPath, <dynamic>[pathMatcher]));
+  void clipPath({ Matcher pathMatcher }) {
+    _predicates.add(_FunctionPaintPredicate(#clipPath, <dynamic>[pathMatcher]));
   }
 
   @override
   void rect({ Rect rect, Color color, double strokeWidth, bool hasMaskFilter, PaintingStyle style }) {
-    _predicates.add(new _RectPaintPredicate(rect: rect, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style));
+    _predicates.add(_RectPaintPredicate(rect: rect, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style));
   }
 
   @override
   void clipRRect({ RRect rrect }) {
-    _predicates.add(new _FunctionPaintPredicate(#clipRRect, <dynamic>[rrect]));
+    _predicates.add(_FunctionPaintPredicate(#clipRRect, <dynamic>[rrect]));
   }
 
   @override
   void rrect({ RRect rrect, Color color, double strokeWidth, bool hasMaskFilter, PaintingStyle style }) {
-    _predicates.add(new _RRectPaintPredicate(rrect: rrect, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style));
+    _predicates.add(_RRectPaintPredicate(rrect: rrect, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style));
   }
 
   @override
   void drrect({ RRect outer, RRect inner, Color color, double strokeWidth, bool hasMaskFilter, PaintingStyle style }) {
-    _predicates.add(new _DRRectPaintPredicate(outer: outer, inner: inner, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style));
+    _predicates.add(_DRRectPaintPredicate(outer: outer, inner: inner, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style));
   }
 
   @override
   void circle({ double x, double y, double radius, Color color, double strokeWidth, bool hasMaskFilter, PaintingStyle style }) {
-    _predicates.add(new _CirclePaintPredicate(x: x, y: y, radius: radius, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style));
+    _predicates.add(_CirclePaintPredicate(x: x, y: y, radius: radius, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style));
   }
 
   @override
   void path({ Iterable<Offset> includes, Iterable<Offset> excludes, Color color, double strokeWidth, bool hasMaskFilter, PaintingStyle style }) {
-    _predicates.add(new _PathPaintPredicate(includes: includes, excludes: excludes, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style));
+    _predicates.add(_PathPaintPredicate(includes: includes, excludes: excludes, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style));
   }
 
   @override
   void line({ Offset p1, Offset p2, Color color, double strokeWidth, bool hasMaskFilter, PaintingStyle style }) {
-    _predicates.add(new _LinePaintPredicate(p1: p1, p2: p2, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style));
+    _predicates.add(_LinePaintPredicate(p1: p1, p2: p2, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style));
   }
 
   @override
   void arc({ Color color, double strokeWidth, bool hasMaskFilter, PaintingStyle style }) {
-    _predicates.add(new _ArcPaintPredicate(color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style));
+    _predicates.add(_ArcPaintPredicate(color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style));
   }
 
   @override
   void paragraph({ ui.Paragraph paragraph, dynamic offset }) {
-    _predicates.add(new _FunctionPaintPredicate(#drawParagraph, <dynamic>[paragraph, offset]));
+    _predicates.add(_FunctionPaintPredicate(#drawParagraph, <dynamic>[paragraph, offset]));
   }
 
   @override
   void shadow({ Iterable<Offset> includes, Iterable<Offset> excludes, Color color, double elevation, bool transparentOccluder }) {
-    _predicates.add(new _ShadowPredicate(includes: includes, excludes: excludes, color: color, elevation: elevation, transparentOccluder: transparentOccluder));
+    _predicates.add(_ShadowPredicate(includes: includes, excludes: excludes, color: color, elevation: elevation, transparentOccluder: transparentOccluder));
   }
 
   @override
   void image({ ui.Image image, double x, double y, Color color, double strokeWidth, bool hasMaskFilter, PaintingStyle style }) {
-    _predicates.add(new _DrawImagePaintPredicate(image: image, x: x, y: y, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style));
+    _predicates.add(_DrawImagePaintPredicate(image: image, x: x, y: y, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style));
   }
 
   @override
   void drawImageRect({ ui.Image image, Rect source, Rect destination, Color color, double strokeWidth, bool hasMaskFilter, PaintingStyle style }) {
-    _predicates.add(new _DrawImageRectPaintPredicate(image: image, source: source, destination: destination, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style));
+    _predicates.add(_DrawImageRectPaintPredicate(image: image, source: source, destination: destination, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style));
   }
 
   @override
   void something(PaintPatternPredicate predicate) {
-    _predicates.add(new _SomethingPaintPredicate(predicate));
+    _predicates.add(_SomethingPaintPredicate(predicate));
   }
 
   @override
   void everything(PaintPatternPredicate predicate) {
-    _predicates.add(new _EverythingPaintPredicate(predicate));
+    _predicates.add(_EverythingPaintPredicate(predicate));
   }
 
   @override
@@ -814,7 +857,7 @@ abstract class _PaintPredicate {
     while (!call.current.invocation.isMethod || call.current.invocation.memberName != symbol) {
       others += 1;
       if (!call.moveNext())
-        throw new _MismatchedCall(
+        throw _MismatchedCall(
           'It called $others other method${ others == 1 ? "" : "s" } on the canvas, '
           'the first of which was $firstCall, but did not '
           'call ${_symbolName(symbol)}() at the time where $this was expected.',
@@ -827,15 +870,21 @@ abstract class _PaintPredicate {
 
   @override
   String toString() {
-    throw new FlutterError('$runtimeType does not implement toString.');
+    throw FlutterError('$runtimeType does not implement toString.');
   }
 }
 
 abstract class _DrawCommandPaintPredicate extends _PaintPredicate {
   _DrawCommandPaintPredicate(
-    this.symbol, this.name, this.argumentCount, this.paintArgumentIndex,
-    { this.color, this.strokeWidth, this.hasMaskFilter, this.style }
-  );
+    this.symbol,
+    this.name,
+    this.argumentCount,
+    this.paintArgumentIndex, {
+    this.color,
+    this.strokeWidth,
+    this.hasMaskFilter,
+    this.style,
+  });
 
   final Symbol symbol;
   final String name;
@@ -861,7 +910,7 @@ abstract class _DrawCommandPaintPredicate extends _PaintPredicate {
   @protected
   @mustCallSuper
   void verifyArguments(List<dynamic> arguments) {
-    final Paint paintArgument = arguments[paintArgumentIndex];
+    final Paint paintArgument = arguments[paintArgumentIndex] as Paint;
     if (color != null && paintArgument.color != color)
       throw 'It called $methodName with a paint whose color, ${paintArgument.color}, was not exactly the expected color ($color).';
     if (strokeWidth != null && paintArgument.strokeWidth != strokeWidth)
@@ -901,12 +950,14 @@ abstract class _DrawCommandPaintPredicate extends _PaintPredicate {
 }
 
 class _OneParameterPaintPredicate<T> extends _DrawCommandPaintPredicate {
-  _OneParameterPaintPredicate(Symbol symbol, String name, {
+  _OneParameterPaintPredicate(
+    Symbol symbol,
+    String name, {
     @required this.expected,
     @required Color color,
     @required double strokeWidth,
     @required bool hasMaskFilter,
-    @required PaintingStyle style
+    @required PaintingStyle style,
   }) : super(
     symbol, name, 2, 1, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style);
 
@@ -915,7 +966,7 @@ class _OneParameterPaintPredicate<T> extends _DrawCommandPaintPredicate {
   @override
   void verifyArguments(List<dynamic> arguments) {
     super.verifyArguments(arguments);
-    final T actual = arguments[0];
+    final T actual = arguments[0] as T;
     if (expected != null && actual != expected)
       throw 'It called $methodName with $T, $actual, which was not exactly the expected $T ($expected).';
   }
@@ -934,13 +985,15 @@ class _OneParameterPaintPredicate<T> extends _DrawCommandPaintPredicate {
 }
 
 class _TwoParameterPaintPredicate<T1, T2> extends _DrawCommandPaintPredicate {
-  _TwoParameterPaintPredicate(Symbol symbol, String name, {
+  _TwoParameterPaintPredicate(
+    Symbol symbol,
+    String name, {
     @required this.expected1,
     @required this.expected2,
     @required Color color,
     @required double strokeWidth,
     @required bool hasMaskFilter,
-    @required PaintingStyle style
+    @required PaintingStyle style,
   }) : super(
     symbol, name, 3, 2, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style);
 
@@ -951,10 +1004,10 @@ class _TwoParameterPaintPredicate<T1, T2> extends _DrawCommandPaintPredicate {
   @override
   void verifyArguments(List<dynamic> arguments) {
     super.verifyArguments(arguments);
-    final T1 actual1 = arguments[0];
+    final T1 actual1 = arguments[0] as T1;
     if (expected1 != null && actual1 != expected1)
       throw 'It called $methodName with its first argument (a $T1), $actual1, which was not exactly the expected $T1 ($expected1).';
-    final T2 actual2 = arguments[1];
+    final T2 actual2 = arguments[1] as T2;
     if (expected2 != null && actual2 != expected2)
       throw 'It called $methodName with its second argument (a $T2), $actual2, which was not exactly the expected $T2 ($expected2).';
   }
@@ -991,16 +1044,49 @@ class _RectPaintPredicate extends _OneParameterPaintPredicate<Rect> {
   );
 }
 
-class _RRectPaintPredicate extends _OneParameterPaintPredicate<RRect> {
-  _RRectPaintPredicate({ RRect rrect, Color color, double strokeWidth, bool hasMaskFilter, PaintingStyle style }) : super(
+class _RRectPaintPredicate extends _DrawCommandPaintPredicate {
+  _RRectPaintPredicate({ this.rrect, Color color, double strokeWidth, bool hasMaskFilter, PaintingStyle style }) : super(
     #drawRRect,
     'a rounded rectangle',
-    expected: rrect,
+    2,
+    1,
     color: color,
     strokeWidth: strokeWidth,
     hasMaskFilter: hasMaskFilter,
     style: style,
   );
+
+  final RRect rrect;
+
+  @override
+  void verifyArguments(List<dynamic> arguments) {
+    super.verifyArguments(arguments);
+    const double eps = .0001;
+    final RRect actual = arguments[0] as RRect;
+    if (rrect != null &&
+       ((actual.left - rrect.left).abs() > eps ||
+        (actual.right - rrect.right).abs() > eps ||
+        (actual.top - rrect.top).abs() > eps ||
+        (actual.bottom - rrect.bottom).abs() > eps ||
+        (actual.blRadiusX - rrect.blRadiusX).abs() > eps ||
+        (actual.blRadiusY - rrect.blRadiusY).abs() > eps ||
+        (actual.brRadiusX - rrect.brRadiusX).abs() > eps ||
+        (actual.brRadiusY - rrect.brRadiusY).abs() > eps ||
+        (actual.tlRadiusX - rrect.tlRadiusX).abs() > eps ||
+        (actual.tlRadiusY - rrect.tlRadiusY).abs() > eps ||
+        (actual.trRadiusX - rrect.trRadiusX).abs() > eps ||
+        (actual.trRadiusY - rrect.trRadiusY).abs() > eps)) {
+      throw 'It called $methodName with RRect, $actual, which was not exactly the expected RRect ($rrect).';
+    }
+  }
+
+  @override
+  void debugFillDescription(List<String> description) {
+    super.debugFillDescription(description);
+    if (rrect != null) {
+      description.add('RRect: $rrect');
+    }
+  }
 }
 
 class _DRRectPaintPredicate extends _TwoParameterPaintPredicate<RRect, RRect> {
@@ -1018,7 +1104,7 @@ class _DRRectPaintPredicate extends _TwoParameterPaintPredicate<RRect, RRect> {
 
 class _CirclePaintPredicate extends _DrawCommandPaintPredicate {
   _CirclePaintPredicate({ this.x, this.y, this.radius, Color color, double strokeWidth, bool hasMaskFilter, PaintingStyle style }) : super(
-    #drawCircle, 'a circle', 3, 2, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style
+    #drawCircle, 'a circle', 3, 2, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style,
   );
 
   final double x;
@@ -1028,9 +1114,9 @@ class _CirclePaintPredicate extends _DrawCommandPaintPredicate {
   @override
   void verifyArguments(List<dynamic> arguments) {
     super.verifyArguments(arguments);
-    final Offset pointArgument = arguments[0];
+    final Offset pointArgument = arguments[0] as Offset;
     if (x != null && y != null) {
-      final Offset point = new Offset(x, y);
+      final Offset point = Offset(x, y);
       if (point != pointArgument)
         throw 'It called $methodName with a center coordinate, $pointArgument, which was not exactly the expected coordinate ($point).';
     } else {
@@ -1039,7 +1125,7 @@ class _CirclePaintPredicate extends _DrawCommandPaintPredicate {
       if (y != null && pointArgument.dy != y)
         throw 'It called $methodName with a center coordinate, $pointArgument, whose y-coordinate not exactly the expected coordinate (${y.toStringAsFixed(1)}).';
     }
-    final double radiusArgument = arguments[1];
+    final double radiusArgument = arguments[1] as double;
     if (radius != null && radiusArgument != radius)
       throw 'It called $methodName with radius, ${radiusArgument.toStringAsFixed(1)}, which was not exactly the expected radius (${radius.toStringAsFixed(1)}).';
   }
@@ -1048,7 +1134,7 @@ class _CirclePaintPredicate extends _DrawCommandPaintPredicate {
   void debugFillDescription(List<String> description) {
     super.debugFillDescription(description);
     if (x != null && y != null) {
-      description.add('point ${new Offset(x, y)}');
+      description.add('point ${Offset(x, y)}');
     } else {
       if (x != null)
         description.add('x-coordinate ${x.toStringAsFixed(1)}');
@@ -1062,7 +1148,7 @@ class _CirclePaintPredicate extends _DrawCommandPaintPredicate {
 
 class _PathPaintPredicate extends _DrawCommandPaintPredicate {
   _PathPaintPredicate({ this.includes, this.excludes, Color color, double strokeWidth, bool hasMaskFilter, PaintingStyle style }) : super(
-    #drawPath, 'a path', 2, 1, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style
+    #drawPath, 'a path', 2, 1, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style,
   );
 
   final Iterable<Offset> includes;
@@ -1071,15 +1157,15 @@ class _PathPaintPredicate extends _DrawCommandPaintPredicate {
   @override
   void verifyArguments(List<dynamic> arguments) {
     super.verifyArguments(arguments);
-    final Path pathArgument = arguments[0];
+    final Path pathArgument = arguments[0] as Path;
     if (includes != null) {
-      for (Offset offset in includes) {
+      for (final Offset offset in includes) {
         if (!pathArgument.contains(offset))
           throw 'It called $methodName with a path that unexpectedly did not contain $offset.';
       }
     }
     if (excludes != null) {
-      for (Offset offset in excludes) {
+      for (final Offset offset in excludes) {
         if (pathArgument.contains(offset))
           throw 'It called $methodName with a path that unexpectedly contained $offset.';
       }
@@ -1102,7 +1188,7 @@ class _PathPaintPredicate extends _DrawCommandPaintPredicate {
 // TODO(ianh): add arguments to test the length, angle, that kind of thing
 class _LinePaintPredicate extends _DrawCommandPaintPredicate {
   _LinePaintPredicate({ this.p1, this.p2, Color color, double strokeWidth, bool hasMaskFilter, PaintingStyle style }) : super(
-    #drawLine, 'a line', 3, 2, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style
+    #drawLine, 'a line', 3, 2, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style,
   );
 
   final Offset p1;
@@ -1113,13 +1199,13 @@ class _LinePaintPredicate extends _DrawCommandPaintPredicate {
     super.verifyArguments(arguments); // Checks the 3rd argument, a Paint
     if (arguments.length != 3)
       throw 'It called $methodName with ${arguments.length} arguments; expected 3.';
-    final Offset p1Argument = arguments[0];
-    final Offset p2Argument = arguments[1];
+    final Offset p1Argument = arguments[0] as Offset;
+    final Offset p2Argument = arguments[1] as Offset;
     if (p1 != null && p1Argument != p1) {
-        throw 'It called $methodName with p1 endpoint, $p1Argument, which was not exactly the expected endpoint ($p1).';
+      throw 'It called $methodName with p1 endpoint, $p1Argument, which was not exactly the expected endpoint ($p1).';
     }
     if (p2 != null && p2Argument != p2) {
-        throw 'It called $methodName with p2 endpoint, $p2Argument, which was not exactly the expected endpoint ($p2).';
+      throw 'It called $methodName with p2 endpoint, $p2Argument, which was not exactly the expected endpoint ($p2).';
     }
   }
 
@@ -1135,7 +1221,7 @@ class _LinePaintPredicate extends _DrawCommandPaintPredicate {
 
 class _ArcPaintPredicate extends _DrawCommandPaintPredicate {
   _ArcPaintPredicate({ Color color, double strokeWidth, bool hasMaskFilter, PaintingStyle style }) : super(
-    #drawArc, 'an arc', 5, 4, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style
+    #drawArc, 'an arc', 5, 4, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style,
   );
 }
 
@@ -1155,26 +1241,26 @@ class _ShadowPredicate extends _PaintPredicate {
   void verifyArguments(List<dynamic> arguments) {
     if (arguments.length != 4)
       throw 'It called $methodName with ${arguments.length} arguments; expected 4.';
-    final Path pathArgument = arguments[0];
+    final Path pathArgument = arguments[0] as Path;
     if (includes != null) {
-      for (Offset offset in includes) {
+      for (final Offset offset in includes) {
         if (!pathArgument.contains(offset))
           throw 'It called $methodName with a path that unexpectedly did not contain $offset.';
       }
     }
     if (excludes != null) {
-      for (Offset offset in excludes) {
+      for (final Offset offset in excludes) {
         if (pathArgument.contains(offset))
           throw 'It called $methodName with a path that unexpectedly contained $offset.';
       }
     }
-    final Color actualColor = arguments[1];
+    final Color actualColor = arguments[1] as Color;
     if (color != null && actualColor != color)
       throw 'It called $methodName with a color, $actualColor, which was not exactly the expected color ($color).';
-    final double actualElevation = arguments[2];
+    final double actualElevation = arguments[2] as double;
     if (elevation != null && actualElevation != elevation)
       throw 'It called $methodName with an elevation, $actualElevation, which was not exactly the expected value ($elevation).';
-    final bool actualTransparentOccluder = arguments[3];
+    final bool actualTransparentOccluder = arguments[3] as bool;
     if (transparentOccluder != null && actualTransparentOccluder != transparentOccluder)
       throw 'It called $methodName with a transparentOccluder value, $actualTransparentOccluder, which was not exactly the expected value ($transparentOccluder).';
   }
@@ -1216,7 +1302,7 @@ class _ShadowPredicate extends _PaintPredicate {
 
 class _DrawImagePaintPredicate extends _DrawCommandPaintPredicate {
   _DrawImagePaintPredicate({ this.image, this.x, this.y, Color color, double strokeWidth, bool hasMaskFilter, PaintingStyle style }) : super(
-    #drawImage, 'an image', 3, 2, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style
+    #drawImage, 'an image', 3, 2, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style,
   );
 
   final ui.Image image;
@@ -1226,12 +1312,12 @@ class _DrawImagePaintPredicate extends _DrawCommandPaintPredicate {
   @override
   void verifyArguments(List<dynamic> arguments) {
     super.verifyArguments(arguments);
-    final ui.Image imageArgument = arguments[0];
+    final ui.Image imageArgument = arguments[0] as ui.Image;
     if (image != null && imageArgument != image)
       throw 'It called $methodName with an image, $imageArgument, which was not exactly the expected image ($image).';
-    final Offset pointArgument = arguments[0];
+    final Offset pointArgument = arguments[0] as Offset;
     if (x != null && y != null) {
-      final Offset point = new Offset(x, y);
+      final Offset point = Offset(x, y);
       if (point != pointArgument)
         throw 'It called $methodName with an offset coordinate, $pointArgument, which was not exactly the expected coordinate ($point).';
     } else {
@@ -1248,7 +1334,7 @@ class _DrawImagePaintPredicate extends _DrawCommandPaintPredicate {
     if (image != null)
       description.add('image $image');
     if (x != null && y != null) {
-      description.add('point ${new Offset(x, y)}');
+      description.add('point ${Offset(x, y)}');
     } else {
       if (x != null)
         description.add('x-coordinate ${x.toStringAsFixed(1)}');
@@ -1260,7 +1346,7 @@ class _DrawImagePaintPredicate extends _DrawCommandPaintPredicate {
 
 class _DrawImageRectPaintPredicate extends _DrawCommandPaintPredicate {
   _DrawImageRectPaintPredicate({ this.image, this.source, this.destination, Color color, double strokeWidth, bool hasMaskFilter, PaintingStyle style }) : super(
-    #drawImageRect, 'an image', 4, 3, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style
+    #drawImageRect, 'an image', 4, 3, color: color, strokeWidth: strokeWidth, hasMaskFilter: hasMaskFilter, style: style,
   );
 
   final ui.Image image;
@@ -1270,13 +1356,13 @@ class _DrawImageRectPaintPredicate extends _DrawCommandPaintPredicate {
   @override
   void verifyArguments(List<dynamic> arguments) {
     super.verifyArguments(arguments);
-    final ui.Image imageArgument = arguments[0];
+    final ui.Image imageArgument = arguments[0] as ui.Image;
     if (image != null && imageArgument != image)
       throw 'It called $methodName with an image, $imageArgument, which was not exactly the expected image ($image).';
-    final Rect sourceArgument = arguments[1];
+    final Rect sourceArgument = arguments[1] as Rect;
     if (source != null && sourceArgument != source)
       throw 'It called $methodName with a source rectangle, $sourceArgument, which was not exactly the expected rectangle ($source).';
-    final Rect destinationArgument = arguments[2];
+    final Rect destinationArgument = arguments[2] as Rect;
     if (destination != null && destinationArgument != destination)
       throw 'It called $methodName with a destination rectangle, $destinationArgument, which was not exactly the expected rectangle ($destination).';
   }
@@ -1382,9 +1468,10 @@ class _FunctionPaintPredicate extends _PaintPredicate {
 
   @override
   String toString() {
-    final List<String> adjectives = <String>[];
-    for (int index = 0; index < arguments.length; index += 1)
-      adjectives.add(arguments[index] != null ? _valueName(arguments[index]) : '...');
+    final List<String> adjectives = <String>[
+      for (int index = 0; index < arguments.length; index += 1)
+        arguments[index] != null ? _valueName(arguments[index]) : '...',
+    ];
     return '${_symbolName(symbol)}(${adjectives.join(", ")})';
   }
 }

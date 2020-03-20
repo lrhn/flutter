@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -21,14 +21,57 @@ const String kDefaultIconsPath = 'packages/flutter/lib/src/material/icons.dart';
 const String kBeginGeneratedMark = '// BEGIN GENERATED';
 const String kEndGeneratedMark = '// END GENERATED';
 
-const Map<String, String> kIdentifierRewrites = const <String, String>{
+const Map<String, String> kIdentifierRewrites = <String, String>{
   '360': 'threesixty',
   '3d_rotation': 'threed_rotation',
+  '1k': 'one_k',
+  '2k': 'two_k',
+  '3k': 'three_k',
   '4k': 'four_k',
+  '5k': 'five_k',
+  '6k': 'six_k',
+  '7k': 'seven_k',
+  '8k': 'eight_k',
+  '9k': 'nine_k',
+  '10k': 'ten_k',
+  '1k_plus': 'one_k_plus',
+  '2k_plus': 'two_k_plus',
+  '3k_plus': 'three_k_plus',
+  '4k_plus': 'four_k_plus',
+  '5k_plus': 'five_k_plus',
+  '6k_plus': 'six_k_plus',
+  '7k_plus': 'seven_k_plus',
+  '8k_plus': 'eight_k_plus',
+  '9k_plus': 'nine_k_plus',
+  '1mp': 'one_mp',
+  '2mp': 'two_mp',
+  '3mp': 'three_mp',
+  '4mp': 'four_mp',
+  '5mp': 'five_mp',
+  '6mp': 'six_mp',
+  '7mp': 'seven_mp',
+  '8mp': 'eight_mp',
+  '9mp': 'nine_mp',
+  '10mp': 'ten_mp',
+  '11mp': 'eleven_mp',
+  '12mp': 'twelve_mp',
+  '13mp': 'thirteen_mp',
+  '14mp': 'fourteen_mp',
+  '15mp': 'fifteen_mp',
+  '16mp': 'sixteen_mp',
+  '17mp': 'seventeen_mp',
+  '18mp': 'eighteen_mp',
+  '19mp': 'nineteen_mp',
+  '20mp': 'twenty_mp',
+  '21mp': 'twenty_one_mp',
+  '22mp': 'twenty_two_mp',
+  '23mp': 'twenty_three_mp',
+  '24mp': 'twenty_four_mp',
   'class': 'class_',
+
 };
 
-final Set<String> kMirroredIcons = new Set<String>.from(<String>[
+const Set<String> kMirroredIcons = <String>{
   // This list is obtained from:
   // http://google.github.io/material-design-icons/#icons-in-rtl
   'arrow_back',
@@ -102,25 +145,25 @@ final Set<String> kMirroredIcons = new Set<String>.from(<String>[
   'view_list',
   'view_quilt',
   'wrap_text',
-]);
+};
 
 void main(List<String> args) {
   // If we're run from the `tools` dir, set the cwd to the repo root.
   if (path.basename(Directory.current.path) == 'tools')
     Directory.current = Directory.current.parent.parent;
 
-  final ArgParser argParser = new ArgParser();
+  final ArgParser argParser = ArgParser();
   argParser.addOption(kOptionCodepointsPath, defaultsTo: kDefaultCodepointsPath);
   argParser.addOption(kOptionIconsPath, defaultsTo: kDefaultIconsPath);
   argParser.addFlag(kOptionDryRun, defaultsTo: false);
   final ArgResults argResults = argParser.parse(args);
 
-  final File iconFile = new File(path.absolute(argResults[kOptionIconsPath]));
+  final File iconFile = File(path.absolute(argResults[kOptionIconsPath] as String));
   if (!iconFile.existsSync()) {
     stderr.writeln('Icons file not found: ${iconFile.path}');
     exit(1);
   }
-  final File codepointsFile = new File(path.absolute(argResults[kOptionCodepointsPath]));
+  final File codepointsFile = File(path.absolute(argResults[kOptionCodepointsPath] as String));
   if (!codepointsFile.existsSync()) {
     stderr.writeln('Codepoints file not found: ${codepointsFile.path}');
     exit(1);
@@ -130,16 +173,16 @@ void main(List<String> args) {
   final String codepointData = codepointsFile.readAsStringSync();
   final String newIconData = regenerateIconsFile(iconData, codepointData);
 
-  if (argResults[kOptionDryRun])
+  if (argResults[kOptionDryRun] as bool)
     stdout.writeln(newIconData);
   else
     iconFile.writeAsStringSync(newIconData);
 }
 
 String regenerateIconsFile(String iconData, String codepointData) {
-  final StringBuffer buf = new StringBuffer();
+  final StringBuffer buf = StringBuffer();
   bool generating = false;
-  for (String line in LineSplitter.split(iconData)) {
+  for (final String line in LineSplitter.split(iconData)) {
     if (!generating)
       buf.writeln(line);
     if (line.contains(kBeginGeneratedMark)) {
@@ -156,16 +199,16 @@ String regenerateIconsFile(String iconData, String codepointData) {
 
 String generateIconDeclarations(String codepointData) {
   return LineSplitter.split(codepointData)
-      .map((String l) => l.trim())
+      .map<String>((String l) => l.trim())
       .where((String l) => l.isNotEmpty)
-      .map(getIconDeclaration)
+      .map<String>(getIconDeclaration)
       .join();
 }
 
 String getIconDeclaration(String line) {
   final List<String> tokens = line.split(' ');
   if (tokens.length != 2)
-    throw new FormatException('Unexpected codepoint data: $line');
+    throw FormatException('Unexpected codepoint data: $line');
   final String name = tokens[0];
   final String codepoint = tokens[1];
   final String identifier = kIdentifierRewrites[name] ?? name;
@@ -173,7 +216,7 @@ String getIconDeclaration(String line) {
   final String rtl = kMirroredIcons.contains(name) ? ', matchTextDirection: true' : '';
   return '''
 
-  /// <p><i class="material-icons md-36">$name</i> &#x2014; material icon named "$description".</p>
-  static const IconData $identifier = const IconData(0x$codepoint, fontFamily: 'MaterialIcons'$rtl);
+  /// <i class="material-icons md-36">$name</i> &#x2014; material icon named "$description".
+  static const IconData $identifier = IconData(0x$codepoint, fontFamily: 'MaterialIcons'$rtl);
 ''';
 }

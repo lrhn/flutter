@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,12 +7,13 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets('English translations exist for all MaterialLocalizations properties', (WidgetTester tester) async {
-    const MaterialLocalizations localizations = const DefaultMaterialLocalizations();
+    const MaterialLocalizations localizations = DefaultMaterialLocalizations();
 
     expect(localizations.openAppDrawerTooltip, isNotNull);
     expect(localizations.backButtonTooltip, isNotNull);
     expect(localizations.closeButtonTooltip, isNotNull);
     expect(localizations.deleteButtonTooltip, isNotNull);
+    expect(localizations.moreButtonTooltip, isNotNull);
     expect(localizations.nextMonthTooltip, isNotNull);
     expect(localizations.previousMonthTooltip, isNotNull);
     expect(localizations.nextPageTooltip, isNotNull);
@@ -34,6 +35,13 @@ void main() {
     expect(localizations.popupMenuLabel, isNotNull);
     expect(localizations.dialogLabel, isNotNull);
     expect(localizations.alertDialogLabel, isNotNull);
+    expect(localizations.searchFieldLabel, isNotNull);
+    expect(localizations.reorderItemUp, isNotNull);
+    expect(localizations.reorderItemDown, isNotNull);
+    expect(localizations.reorderItemLeft, isNotNull);
+    expect(localizations.reorderItemRight, isNotNull);
+    expect(localizations.reorderItemToEnd, isNotNull);
+    expect(localizations.reorderItemToStart, isNotNull);
 
     expect(localizations.aboutListTileTitle('FOO'), isNotNull);
     expect(localizations.aboutListTileTitle('FOO'), contains('FOO'));

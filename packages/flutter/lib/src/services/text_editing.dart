@@ -1,97 +1,12 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:ui' show hashValues, TextAffinity, TextPosition;
+import 'dart:ui' show hashValues, TextAffinity, TextPosition, TextRange;
 
 import 'package:flutter/foundation.dart';
 
-export 'dart:ui' show TextAffinity, TextPosition;
-
-/// A range of characters in a string of text.
-@immutable
-class TextRange {
-  /// Creates a text range.
-  ///
-  /// The [start] and [end] arguments must not be null. Both the [start] and
-  /// [end] must either be greater than or equal to zero or both exactly -1.
-  ///
-  /// Instead of creating an empty text range, consider using the [empty]
-  /// constant.
-  const TextRange({
-    @required this.start,
-    @required this.end
-  }) : assert(start != null && start >= -1),
-       assert(end != null && end >= -1);
-
-  /// A text range that starts and ends at offset.
-  ///
-  /// The [offset] argument must be non-null and greater than or equal to -1.
-  const TextRange.collapsed(int offset)
-    : assert(offset != null && offset >= -1),
-      start = offset,
-      end = offset;
-
-  /// A text range that contains nothing and is not in the text.
-  static const TextRange empty = const TextRange(start: -1, end: -1);
-
-  /// The index of the first character in the range.
-  ///
-  /// If [start] and [end] are both -1, the text range is empty.
-  final int start;
-
-  /// The next index after the characters in this range.
-  ///
-  /// If [start] and [end] are both -1, the text range is empty.
-  final int end;
-
-  /// Whether this range represents a valid position in the text.
-  bool get isValid => start >= 0 && end >= 0;
-
-  /// Whether this range is empty (but still potentially placed inside the text).
-  bool get isCollapsed => start == end;
-
-  /// Whether the start of this range precedes the end.
-  bool get isNormalized => end >= start;
-
-  /// The text before this range.
-  String textBefore(String text) {
-    assert(isNormalized);
-    return text.substring(0, start);
-  }
-
-  /// The text after this range.
-  String textAfter(String text) {
-    assert(isNormalized);
-    return text.substring(end);
-  }
-
-  /// The text inside this range.
-  String textInside(String text) {
-    assert(isNormalized);
-    return text.substring(start, end);
-  }
-
-  @override
-  bool operator ==(dynamic other) {
-    if (identical(this, other))
-      return true;
-    if (other is! TextRange)
-      return false;
-    final TextRange typedOther = other;
-    return typedOther.start == start
-        && typedOther.end == end;
-  }
-
-  @override
-  int get hashCode => hashValues(
-    start.hashCode,
-    end.hashCode
-  );
-
-  @override
-  String toString() => 'TextRange(start: $start, end: $end)';
-}
+export 'dart:ui' show TextAffinity, TextPosition, TextRange;
 
 /// A range of text that represents a selection.
 @immutable
@@ -102,11 +17,11 @@ class TextSelection extends TextRange {
   const TextSelection({
     @required this.baseOffset,
     @required this.extentOffset,
-    this.affinity: TextAffinity.downstream,
-    this.isDirectional: false
+    this.affinity = TextAffinity.downstream,
+    this.isDirectional = false,
   }) : super(
          start: baseOffset < extentOffset ? baseOffset : extentOffset,
-         end: baseOffset < extentOffset ? extentOffset : baseOffset
+         end: baseOffset < extentOffset ? extentOffset : baseOffset,
        );
 
   /// Creates a collapsed selection at the given offset.
@@ -118,8 +33,11 @@ class TextSelection extends TextRange {
   /// The [offset] argument must not be null.
   const TextSelection.collapsed({
     @required int offset,
-    this.affinity: TextAffinity.downstream
-  }) : baseOffset = offset, extentOffset = offset, isDirectional = false, super.collapsed(offset);
+    this.affinity = TextAffinity.downstream,
+  }) : baseOffset = offset,
+       extentOffset = offset,
+       isDirectional = false,
+       super.collapsed(offset);
 
   /// Creates a collapsed selection at the given text position.
   ///
@@ -163,7 +81,7 @@ class TextSelection extends TextRange {
   /// The position at which the selection originates.
   ///
   /// Might be larger than, smaller than, or equal to extent.
-  TextPosition get base => new TextPosition(offset: baseOffset, affinity: affinity);
+  TextPosition get base => TextPosition(offset: baseOffset, affinity: affinity);
 
   /// The position at which the selection terminates.
   ///
@@ -172,24 +90,22 @@ class TextSelection extends TextRange {
   /// side of the selection, this is the location at which to paint the caret.
   ///
   /// Might be larger than, smaller than, or equal to base.
-  TextPosition get extent => new TextPosition(offset: extentOffset, affinity: affinity);
+  TextPosition get extent => TextPosition(offset: extentOffset, affinity: affinity);
 
   @override
   String toString() {
-    return '$runtimeType(baseOffset: $baseOffset, extentOffset: $extentOffset, affinity: $affinity, isDirectional: $isDirectional)';
+    return '${objectRuntimeType(this, 'TextSelection')}(baseOffset: $baseOffset, extentOffset: $extentOffset, affinity: $affinity, isDirectional: $isDirectional)';
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other))
       return true;
-    if (other is! TextSelection)
-      return false;
-    final TextSelection typedOther = other;
-    return typedOther.baseOffset == baseOffset
-        && typedOther.extentOffset == extentOffset
-        && typedOther.affinity == affinity
-        && typedOther.isDirectional == isDirectional;
+    return other is TextSelection
+        && other.baseOffset == baseOffset
+        && other.extentOffset == extentOffset
+        && other.affinity == affinity
+        && other.isDirectional == isDirectional;
   }
 
   @override
@@ -197,7 +113,7 @@ class TextSelection extends TextRange {
     baseOffset.hashCode,
     extentOffset.hashCode,
     affinity.hashCode,
-    isDirectional.hashCode
+    isDirectional.hashCode,
   );
 
   /// Creates a new [TextSelection] based on the current selection, with the
@@ -208,7 +124,7 @@ class TextSelection extends TextRange {
     TextAffinity affinity,
     bool isDirectional,
   }) {
-    return new TextSelection(
+    return TextSelection(
       baseOffset: baseOffset ?? this.baseOffset,
       extentOffset: extentOffset ?? this.extentOffset,
       affinity: affinity ?? this.affinity,

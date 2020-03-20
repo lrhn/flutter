@@ -1,8 +1,10 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'dart:math' as math;
+
+import 'package:flutter/foundation.dart';
 
 import 'basic_types.dart';
 import 'border_radius.dart';
@@ -22,8 +24,8 @@ class BeveledRectangleBorder extends ShapeBorder {
   ///
   /// The arguments must not be null.
   const BeveledRectangleBorder({
-    this.side: BorderSide.none,
-    this.borderRadius: BorderRadius.zero,
+    this.side = BorderSide.none,
+    this.borderRadius = BorderRadius.zero,
   }) : assert(side != null),
        assert(borderRadius != null);
 
@@ -43,12 +45,12 @@ class BeveledRectangleBorder extends ShapeBorder {
 
   @override
   EdgeInsetsGeometry get dimensions {
-    return new EdgeInsets.all(side.width);
+    return EdgeInsets.all(side.width);
   }
 
   @override
   ShapeBorder scale(double t) {
-    return new BeveledRectangleBorder(
+    return BeveledRectangleBorder(
       side: side.scale(t),
       borderRadius: borderRadius * t,
     );
@@ -58,9 +60,9 @@ class BeveledRectangleBorder extends ShapeBorder {
   ShapeBorder lerpFrom(ShapeBorder a, double t) {
     assert(t != null);
     if (a is BeveledRectangleBorder) {
-      return new BeveledRectangleBorder(
+      return BeveledRectangleBorder(
         side: BorderSide.lerp(a.side, side, t),
-        borderRadius: BorderRadius.lerp(a.borderRadius, borderRadius, t),
+        borderRadius: BorderRadiusGeometry.lerp(a.borderRadius, borderRadius, t),
       );
     }
     return super.lerpFrom(a, t);
@@ -70,19 +72,19 @@ class BeveledRectangleBorder extends ShapeBorder {
   ShapeBorder lerpTo(ShapeBorder b, double t) {
     assert(t != null);
     if (b is BeveledRectangleBorder) {
-      return new BeveledRectangleBorder(
+      return BeveledRectangleBorder(
         side: BorderSide.lerp(side, b.side, t),
-        borderRadius: BorderRadius.lerp(borderRadius, b.borderRadius, t),
+        borderRadius: BorderRadiusGeometry.lerp(borderRadius, b.borderRadius, t),
       );
     }
     return super.lerpTo(b, t);
   }
 
   Path _getPath(RRect rrect) {
-    final Offset centerLeft = new Offset(rrect.left, rrect.center.dy);
-    final Offset centerRight = new Offset(rrect.right, rrect.center.dy);
-    final Offset centerTop = new Offset(rrect.center.dx, rrect.top);
-    final Offset centerBottom = new Offset(rrect.center.dx, rrect.bottom);
+    final Offset centerLeft = Offset(rrect.left, rrect.center.dy);
+    final Offset centerRight = Offset(rrect.right, rrect.center.dy);
+    final Offset centerTop = Offset(rrect.center.dx, rrect.top);
+    final Offset centerBottom = Offset(rrect.center.dx, rrect.bottom);
 
     final double tlRadiusX = math.max(0.0, rrect.tlRadiusX);
     final double tlRadiusY = math.max(0.0, rrect.tlRadiusY);
@@ -94,17 +96,17 @@ class BeveledRectangleBorder extends ShapeBorder {
     final double brRadiusY = math.max(0.0, rrect.brRadiusY);
 
     final List<Offset> vertices = <Offset>[
-      new Offset(rrect.left, math.min(centerLeft.dy, rrect.top + tlRadiusY)),
-      new Offset(math.min(centerTop.dx, rrect.left + tlRadiusX), rrect.top),
-      new Offset(math.max(centerTop.dx, rrect.right -trRadiusX), rrect.top),
-      new Offset(rrect.right, math.min(centerRight.dy, rrect.top + trRadiusY)),
-      new Offset(rrect.right, math.max(centerRight.dy, rrect.bottom - brRadiusY)),
-      new Offset(math.max(centerBottom.dx, rrect.right - brRadiusX), rrect.bottom),
-      new Offset(math.min(centerBottom.dx, rrect.left + blRadiusX), rrect.bottom),
-      new Offset(rrect.left, math.max(centerLeft.dy, rrect.bottom  - blRadiusY)),
+      Offset(rrect.left, math.min(centerLeft.dy, rrect.top + tlRadiusY)),
+      Offset(math.min(centerTop.dx, rrect.left + tlRadiusX), rrect.top),
+      Offset(math.max(centerTop.dx, rrect.right -trRadiusX), rrect.top),
+      Offset(rrect.right, math.min(centerRight.dy, rrect.top + trRadiusY)),
+      Offset(rrect.right, math.max(centerRight.dy, rrect.bottom - brRadiusY)),
+      Offset(math.max(centerBottom.dx, rrect.right - brRadiusX), rrect.bottom),
+      Offset(math.min(centerBottom.dx, rrect.left + blRadiusX), rrect.bottom),
+      Offset(rrect.left, math.max(centerLeft.dy, rrect.bottom  - blRadiusY)),
     ];
 
-    return new Path()..addPolygon(vertices, true);
+    return Path()..addPolygon(vertices, true);
   }
 
   @override
@@ -125,7 +127,7 @@ class BeveledRectangleBorder extends ShapeBorder {
       case BorderStyle.none:
         break;
       case BorderStyle.solid:
-      final Path path = getOuterPath(rect, textDirection: textDirection)
+        final Path path = getOuterPath(rect, textDirection: textDirection)
           ..addPath(getInnerPath(rect, textDirection: textDirection), Offset.zero);
         canvas.drawPath(path, side.toPaint());
         break;
@@ -133,12 +135,12 @@ class BeveledRectangleBorder extends ShapeBorder {
   }
 
   @override
-  bool operator ==(dynamic other) {
-    if (runtimeType != other.runtimeType)
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType)
       return false;
-    final BeveledRectangleBorder typedOther = other;
-    return side == typedOther.side
-        && borderRadius == typedOther.borderRadius;
+    return other is BeveledRectangleBorder
+        && other.side == side
+        && other.borderRadius == borderRadius;
   }
 
   @override
@@ -146,6 +148,6 @@ class BeveledRectangleBorder extends ShapeBorder {
 
   @override
   String toString() {
-    return '$runtimeType($side, $borderRadius)';
+    return '${objectRuntimeType(this, 'BeveledRectangleBorder')}($side, $borderRadius)';
   }
 }

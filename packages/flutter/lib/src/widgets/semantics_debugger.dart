@@ -1,10 +1,9 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'dart:math' as math;
 import 'dart:ui' show SemanticsFlag;
-import 'dart:ui' as ui show window;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
@@ -23,15 +22,30 @@ class SemanticsDebugger extends StatefulWidget {
   /// Creates a widget that visualizes the semantics for the child.
   ///
   /// The [child] argument must not be null.
-  const SemanticsDebugger({ Key key, this.child }) : super(key: key);
+  ///
+  /// [labelStyle] dictates the [TextStyle] used for the semantics labels.
+  const SemanticsDebugger({
+    Key key,
+    @required this.child,
+    this.labelStyle = const TextStyle(
+      color: Color(0xFF000000),
+      fontSize: 10.0,
+      height: 0.8,
+    ),
+  }) : assert(child != null),
+       assert(labelStyle != null),
+       super(key: key);
 
   /// The widget below this widget in the tree.
   ///
   /// {@macro flutter.widgets.child}
   final Widget child;
 
+  /// The [TextStyle] to use when rendering semantics labels.
+  final TextStyle labelStyle;
+
   @override
-  _SemanticsDebuggerState createState() => new _SemanticsDebuggerState();
+  _SemanticsDebuggerState createState() => _SemanticsDebuggerState();
 }
 
 class _SemanticsDebuggerState extends State<SemanticsDebugger> with WidgetsBindingObserver {
@@ -44,7 +58,7 @@ class _SemanticsDebuggerState extends State<SemanticsDebugger> with WidgetsBindi
     // static here because we might not be in a tree that's attached to that
     // binding. Instead, we should find a way to get to the PipelineOwner from
     // the BuildContext.
-    _client = new _SemanticsClient(WidgetsBinding.instance.pipelineOwner)
+    _client = _SemanticsClient(WidgetsBinding.instance.pipelineOwner)
       ..addListener(_update);
     WidgetsBinding.instance.addObserver(this);
   }
@@ -89,7 +103,7 @@ class _SemanticsDebuggerState extends State<SemanticsDebugger> with WidgetsBindi
   Offset _lastPointerDownLocation;
   void _handlePointerDown(PointerDownEvent event) {
     setState(() {
-      _lastPointerDownLocation = event.position * ui.window.devicePixelRatio;
+      _lastPointerDownLocation = event.position * WidgetsBinding.instance.window.devicePixelRatio;
     });
     // TODO(ianh): Use a gesture recognizer so that we can reset the
     // _lastPointerDownLocation when none of the other gesture recognizers win.
@@ -145,23 +159,24 @@ class _SemanticsDebuggerState extends State<SemanticsDebugger> with WidgetsBindi
 
   @override
   Widget build(BuildContext context) {
-    return new CustomPaint(
-      foregroundPainter: new _SemanticsDebuggerPainter(
+    return CustomPaint(
+      foregroundPainter: _SemanticsDebuggerPainter(
         _pipelineOwner,
         _client.generation,
         _lastPointerDownLocation, // in physical pixels
-        ui.window.devicePixelRatio,
+        WidgetsBinding.instance.window.devicePixelRatio,
+        widget.labelStyle,
       ),
-      child: new GestureDetector(
+      child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: _handleTap,
         onLongPress: _handleLongPress,
         onPanEnd: _handlePanEnd,
         excludeFromSemantics: true, // otherwise if you don't hit anything, we end up receiving it, which causes an infinite loop...
-        child: new Listener(
+        child: Listener(
           onPointerDown: _handlePointerDown,
           behavior: HitTestBehavior.opaque,
-          child: new IgnorePointer(
+          child: IgnorePointer(
             ignoringSemantics: false,
             child: widget.child,
           ),
@@ -195,150 +210,14 @@ class _SemanticsClient extends ChangeNotifier {
   }
 }
 
-String _getMessage(SemanticsNode node) {
-  final SemanticsData data = node.getSemanticsData();
-  final List<String> annotations = <String>[];
-
-  bool wantsTap = false;
-  if (data.hasFlag(SemanticsFlag.hasCheckedState)) {
-    annotations.add(data.hasFlag(SemanticsFlag.isChecked) ? 'checked' : 'unchecked');
-    wantsTap = true;
-  }
-
-  if (data.hasAction(SemanticsAction.tap)) {
-    if (!wantsTap)
-      annotations.add('button');
-  } else {
-    if (wantsTap)
-      annotations.add('disabled');
-  }
-
-  if (data.hasAction(SemanticsAction.longPress))
-    annotations.add('long-pressable');
-
-  final bool isScrollable = data.hasAction(SemanticsAction.scrollLeft)
-                         || data.hasAction(SemanticsAction.scrollRight)
-                         || data.hasAction(SemanticsAction.scrollUp)
-                         || data.hasAction(SemanticsAction.scrollDown);
-
-  final bool isAdjustable = data.hasAction(SemanticsAction.increase)
-                         || data.hasAction(SemanticsAction.decrease);
-
-  if (isScrollable)
-    annotations.add('scrollable');
-
-  if (isAdjustable)
-    annotations.add('adjustable');
-
-  assert(data.label != null);
-  String message;
-  if (data.label.isEmpty) {
-    message = annotations.join('; ');
-  } else {
-    String label;
-    if (data.textDirection == null) {
-      label = '${Unicode.FSI}${data.label}${Unicode.PDI}';
-      annotations.insert(0, 'MISSING TEXT DIRECTION');
-    } else {
-      switch (data.textDirection) {
-        case TextDirection.rtl:
-          label = '${Unicode.RLI}${data.label}${Unicode.PDF}';
-          break;
-        case TextDirection.ltr:
-          label = data.label;
-          break;
-      }
-    }
-    if (annotations.isEmpty) {
-      message = label;
-    } else {
-      message = '$label (${annotations.join('; ')})';
-    }
-  }
-
-  return message.trim();
-}
-
-const TextStyle _messageStyle = const TextStyle(
-  color: const Color(0xFF000000),
-  fontSize: 10.0,
-  height: 0.8
-);
-
-void _paintMessage(Canvas canvas, SemanticsNode node) {
-  final String message = _getMessage(node);
-  if (message.isEmpty)
-    return;
-  final Rect rect = node.rect;
-  canvas.save();
-  canvas.clipRect(rect);
-  final TextPainter textPainter = new TextPainter()
-    ..text = new TextSpan(
-      style: _messageStyle,
-      text: message,
-    )
-    ..textDirection = TextDirection.ltr // _getMessage always returns LTR text, even if node.label is RTL
-    ..textAlign = TextAlign.center
-    ..layout(maxWidth: rect.width);
-
-  textPainter.paint(canvas, Alignment.center.inscribe(textPainter.size, rect).topLeft);
-  canvas.restore();
-}
-
-int _findDepth(SemanticsNode node) {
-  if (!node.hasChildren || node.mergeAllDescendantsIntoThisNode)
-    return 1;
-  int childrenDepth = 0;
-  node.visitChildren((SemanticsNode child) {
-    childrenDepth = math.max(childrenDepth, _findDepth(child));
-    return true;
-  });
-  return childrenDepth + 1;
-}
-
-void _paint(Canvas canvas, SemanticsNode node, int rank) {
-  canvas.save();
-  if (node.transform != null)
-    canvas.transform(node.transform.storage);
-  final Rect rect = node.rect;
-  if (!rect.isEmpty) {
-    final Color lineColor = new Color(0xFF000000 + new math.Random(node.id).nextInt(0xFFFFFF));
-    final Rect innerRect = rect.deflate(rank * 1.0);
-    if (innerRect.isEmpty) {
-      final Paint fill = new Paint()
-       ..color = lineColor
-       ..style = PaintingStyle.fill;
-      canvas.drawRect(rect, fill);
-    } else {
-      final Paint fill = new Paint()
-       ..color = const Color(0xFFFFFFFF)
-       ..style = PaintingStyle.fill;
-      canvas.drawRect(rect, fill);
-      final Paint line = new Paint()
-       ..strokeWidth = rank * 2.0
-       ..color = lineColor
-       ..style = PaintingStyle.stroke;
-      canvas.drawRect(innerRect, line);
-    }
-    _paintMessage(canvas, node);
-  }
-  if (!node.mergeAllDescendantsIntoThisNode) {
-    final int childRank = rank - 1;
-    node.visitChildren((SemanticsNode child) {
-      _paint(canvas, child, childRank);
-      return true;
-    });
-  }
-  canvas.restore();
-}
-
 class _SemanticsDebuggerPainter extends CustomPainter {
-  const _SemanticsDebuggerPainter(this.owner, this.generation, this.pointerPosition, this.devicePixelRatio);
+  const _SemanticsDebuggerPainter(this.owner, this.generation, this.pointerPosition, this.devicePixelRatio, this.labelStyle);
 
   final PipelineOwner owner;
   final int generation;
   final Offset pointerPosition; // in physical pixels
   final double devicePixelRatio;
+  final TextStyle labelStyle;
 
   SemanticsNode get _rootSemanticsNode {
     return owner.semanticsOwner?.rootSemanticsNode;
@@ -352,7 +231,7 @@ class _SemanticsDebuggerPainter extends CustomPainter {
     if (rootNode != null)
       _paint(canvas, rootNode, _findDepth(rootNode));
     if (pointerPosition != null) {
-      final Paint paint = new Paint();
+      final Paint paint = Paint();
       paint.color = const Color(0x7F0090FF);
       canvas.drawCircle(pointerPosition, 10.0 * devicePixelRatio, paint);
     }
@@ -364,5 +243,141 @@ class _SemanticsDebuggerPainter extends CustomPainter {
     return owner != oldDelegate.owner
         || generation != oldDelegate.generation
         || pointerPosition != oldDelegate.pointerPosition;
+  }
+
+  @visibleForTesting
+  String getMessage(SemanticsNode node) {
+    final SemanticsData data = node.getSemanticsData();
+    final List<String> annotations = <String>[];
+
+    bool wantsTap = false;
+    if (data.hasFlag(SemanticsFlag.hasCheckedState)) {
+      annotations.add(data.hasFlag(SemanticsFlag.isChecked) ? 'checked' : 'unchecked');
+      wantsTap = true;
+    }
+    if (data.hasFlag(SemanticsFlag.isTextField)) {
+      annotations.add('textfield');
+      wantsTap = true;
+    }
+
+    if (data.hasAction(SemanticsAction.tap)) {
+      if (!wantsTap)
+        annotations.add('button');
+    } else {
+      if (wantsTap)
+        annotations.add('disabled');
+    }
+
+    if (data.hasAction(SemanticsAction.longPress))
+      annotations.add('long-pressable');
+
+    final bool isScrollable = data.hasAction(SemanticsAction.scrollLeft)
+        || data.hasAction(SemanticsAction.scrollRight)
+        || data.hasAction(SemanticsAction.scrollUp)
+        || data.hasAction(SemanticsAction.scrollDown);
+
+    final bool isAdjustable = data.hasAction(SemanticsAction.increase)
+        || data.hasAction(SemanticsAction.decrease);
+
+    if (isScrollable)
+      annotations.add('scrollable');
+
+    if (isAdjustable)
+      annotations.add('adjustable');
+
+    assert(data.label != null);
+    String message;
+    if (data.label.isEmpty) {
+      message = annotations.join('; ');
+    } else {
+      String label;
+      if (data.textDirection == null) {
+        label = '${Unicode.FSI}${data.label}${Unicode.PDI}';
+        annotations.insert(0, 'MISSING TEXT DIRECTION');
+      } else {
+        switch (data.textDirection) {
+          case TextDirection.rtl:
+            label = '${Unicode.RLI}${data.label}${Unicode.PDF}';
+            break;
+          case TextDirection.ltr:
+            label = data.label;
+            break;
+        }
+      }
+      if (annotations.isEmpty) {
+        message = label;
+      } else {
+        message = '$label (${annotations.join('; ')})';
+      }
+    }
+
+    return message.trim();
+  }
+
+  void _paintMessage(Canvas canvas, SemanticsNode node) {
+    final String message = getMessage(node);
+    if (message.isEmpty)
+      return;
+    final Rect rect = node.rect;
+    canvas.save();
+    canvas.clipRect(rect);
+    final TextPainter textPainter = TextPainter()
+      ..text = TextSpan(
+        style: labelStyle,
+        text: message,
+      )
+      ..textDirection = TextDirection.ltr // _getMessage always returns LTR text, even if node.label is RTL
+      ..textAlign = TextAlign.center
+      ..layout(maxWidth: rect.width);
+
+    textPainter.paint(canvas, Alignment.center.inscribe(textPainter.size, rect).topLeft);
+    canvas.restore();
+  }
+
+  int _findDepth(SemanticsNode node) {
+    if (!node.hasChildren || node.mergeAllDescendantsIntoThisNode)
+      return 1;
+    int childrenDepth = 0;
+    node.visitChildren((SemanticsNode child) {
+      childrenDepth = math.max(childrenDepth, _findDepth(child));
+      return true;
+    });
+    return childrenDepth + 1;
+  }
+
+  void _paint(Canvas canvas, SemanticsNode node, int rank) {
+    canvas.save();
+    if (node.transform != null)
+      canvas.transform(node.transform.storage);
+    final Rect rect = node.rect;
+    if (!rect.isEmpty) {
+      final Color lineColor = Color(0xFF000000 + math.Random(node.id).nextInt(0xFFFFFF));
+      final Rect innerRect = rect.deflate(rank * 1.0);
+      if (innerRect.isEmpty) {
+        final Paint fill = Paint()
+          ..color = lineColor
+          ..style = PaintingStyle.fill;
+        canvas.drawRect(rect, fill);
+      } else {
+        final Paint fill = Paint()
+          ..color = const Color(0xFFFFFFFF)
+          ..style = PaintingStyle.fill;
+        canvas.drawRect(rect, fill);
+        final Paint line = Paint()
+          ..strokeWidth = rank * 2.0
+          ..color = lineColor
+          ..style = PaintingStyle.stroke;
+        canvas.drawRect(innerRect, line);
+      }
+      _paintMessage(canvas, node);
+    }
+    if (!node.mergeAllDescendantsIntoThisNode) {
+      final int childRank = rank - 1;
+      node.visitChildren((SemanticsNode child) {
+        _paint(canvas, child, childRank);
+        return true;
+      });
+    }
+    canvas.restore();
   }
 }

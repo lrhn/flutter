@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -8,6 +8,7 @@ export 'dart:ui' show
   BlendMode,
   BlurStyle,
   Canvas,
+  Clip,
   Color,
   ColorFilter,
   FilterQuality,
@@ -21,6 +22,7 @@ export 'dart:ui' show
   PaintingStyle,
   Path,
   PathFillType,
+  PathOperation,
   Radius,
   RRect,
   RSTransform,
@@ -39,9 +41,10 @@ export 'dart:ui' show
   TextPosition,
   TileMode,
   VertexMode,
-  VoidCallback,
   hashValues,
   hashList;
+
+export 'package:flutter/foundation.dart' show VoidCallback;
 
 // Intentionally not exported:
 //  - Image, instantiateImageCodec, decodeImageFromList:
@@ -251,11 +254,11 @@ AxisDirection flipAxisDirection(AxisDirection axisDirection) {
   return null;
 }
 
-/// Returns whether travelling along the given axis direction visits coordinates
+/// Returns whether traveling along the given axis direction visits coordinates
 /// along that axis in numerically decreasing order.
 ///
 /// Specifically, returns true for [AxisDirection.up] and [AxisDirection.left]
-/// and false for [AxisDirection.down] for [AxisDirection.right].
+/// and false for [AxisDirection.down] and [AxisDirection.right].
 bool axisDirectionIsReversed(AxisDirection axisDirection) {
   assert(axisDirection != null);
   switch (axisDirection) {

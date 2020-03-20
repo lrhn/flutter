@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -9,7 +9,7 @@ import 'package:flutter_devicelab/framework/adb.dart';
 import 'package:flutter_devicelab/framework/framework.dart';
 
 /// End to end tests for iOS.
-Future<Null> main() async {
+Future<void> main() async {
   deviceOperatingSystem = DeviceOperatingSystem.ios;
   await task(runEndToEndTests);
 }

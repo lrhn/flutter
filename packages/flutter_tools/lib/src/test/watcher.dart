@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -11,20 +11,20 @@ abstract class TestWatcher {
   ///
   /// If startPaused was true, the caller needs to resume in Observatory to
   /// start running the tests.
-  void onStartedProcess(ProcessEvent event) {}
+  void handleStartedProcess(ProcessEvent event) { }
 
   /// Called after the tests finish but before the process exits.
   ///
   /// The child process won't exit until this method completes.
   /// Not called if the process died.
-  Future<void> onFinishedTest(ProcessEvent event) async {}
+  Future<void> handleFinishedTest(ProcessEvent event) async { }
 
   /// Called when the test process crashed before connecting to test harness.
-  Future<void> onTestCrashed(ProcessEvent event) async {}
+  Future<void> handleTestCrashed(ProcessEvent event) async { }
 
   /// Called if we timed out waiting for the test process to connect to test
   /// harness.
-  Future<void> onTestTimedOut(ProcessEvent event) async {}
+  Future<void> handleTestTimedOut(ProcessEvent event) async { }
 }
 
 /// Describes a child process started during testing.
@@ -40,6 +40,6 @@ class ProcessEvent {
 
   final Process process;
 
-  /// The observatory Uri or null if not debugging.
+  /// The observatory URL or null if not debugging.
   final Uri observatoryUri;
 }

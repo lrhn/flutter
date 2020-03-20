@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -11,7 +11,7 @@ class Timeline {
   ///
   /// See https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview
   factory Timeline.fromJson(Map<String, dynamic> json) {
-    return new Timeline._(json, _parseEvents(json));
+    return Timeline._(json, _parseEvents(json));
   }
 
   Timeline._(this.json, this.events);
@@ -27,22 +27,22 @@ class Timeline {
 class TimelineEvent {
   /// Creates a timeline event given JSON-encoded event data.
   factory TimelineEvent(Map<String, dynamic> json) {
-    return new TimelineEvent._(
+    return TimelineEvent._(
       json,
-      json['name'],
-      json['cat'],
-      json['ph'],
-      json['pid'],
-      json['tid'],
+      json['name'] as String,
+      json['cat'] as String,
+      json['ph'] as String,
+      json['pid'] as int,
+      json['tid'] as int,
       json['dur'] != null
-        ? new Duration(microseconds: json['dur'])
+        ? Duration(microseconds: json['dur'] as int)
         : null,
       json['tdur'] != null
-        ? new Duration(microseconds: json['tdur'])
+        ? Duration(microseconds: json['tdur'] as int)
         : null,
-      json['ts'],
-      json['tts'],
-      json['args']
+      json['ts'] as int,
+      json['tts'] as int,
+      json['args'] as Map<String, dynamic>,
     );
   }
 
@@ -57,7 +57,7 @@ class TimelineEvent {
     this.threadDuration,
     this.timestampMicros,
     this.threadTimestampMicros,
-    this.arguments
+    this.arguments,
   );
 
   /// The original event JSON.
@@ -122,13 +122,13 @@ class TimelineEvent {
 }
 
 List<TimelineEvent> _parseEvents(Map<String, dynamic> json) {
-  final List<dynamic> jsonEvents = json['traceEvents'];
+  final List<dynamic> jsonEvents = json['traceEvents'] as List<dynamic>;
 
   if (jsonEvents == null)
     return null;
 
-  // TODO(vegorov) use instance method version of castFrom when it is available.
+  // TODO(vegorov): use instance method version of castFrom when it is available.
   return Iterable.castFrom<dynamic, Map<String, dynamic>>(jsonEvents)
-    .map((Map<String, dynamic> eventJson) => new TimelineEvent(eventJson))
+    .map<TimelineEvent>((Map<String, dynamic> eventJson) => TimelineEvent(eventJson))
     .toList();
 }

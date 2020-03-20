@@ -1,9 +1,10 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'package:flutter_driver/flutter_driver.dart';
-import 'package:test/test.dart';
+
+import 'package:test/test.dart' hide TypeMatcher, isInstanceOf;
 
 void main() {
   group('flutter run test --route', () {
@@ -14,7 +15,7 @@ void main() {
     });
 
     tearDownAll(() async {
-      driver?.close();
+      await driver?.close();
     });
 
     test('sanity check flutter drive --route', () async {

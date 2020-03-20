@@ -1,15 +1,19 @@
+// Copyright 2014 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_driver/driver_extension.dart';
 
 void main() {
   enableFlutterDriverExtension();
-  runApp(new Center(child: new Flavor()));
+  runApp(Center(child: Flavor()));
 }
 
 class Flavor extends StatefulWidget {
   @override
-  _FlavorState createState() => new _FlavorState();
+  _FlavorState createState() => _FlavorState();
 }
 
 class _FlavorState extends State<Flavor> {
@@ -18,7 +22,7 @@ class _FlavorState extends State<Flavor> {
   @override
   void initState() {
     super.initState();
-    const MethodChannel('flavor').invokeMethod('getFlavor').then((Object flavor) {
+    const MethodChannel('flavor').invokeMethod<String>('getFlavor').then((String flavor) {
       setState(() {
         _flavor = flavor;
       });
@@ -27,11 +31,11 @@ class _FlavorState extends State<Flavor> {
 
   @override
   Widget build(BuildContext context) {
-    return new Directionality(
+    return Directionality(
       textDirection: TextDirection.ltr,
       child: _flavor == null
         ? const Text('Awaiting flavor...')
-        : new Text(_flavor, key: const ValueKey<String>('flavor')),
+        : Text(_flavor, key: const ValueKey<String>('flavor')),
     );
   }
 }

@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -91,13 +91,14 @@ void main() {
   });
 }
 
-void expectAdjustable(SemanticsNode node, {
-  bool hasIncreaseAction: true,
-  bool hasDecreaseAction: true,
-  String label: '',
-  String decreasedValue: '',
-  String value: '',
-  String increasedValue: '',
+void expectAdjustable(
+  SemanticsNode node, {
+  bool hasIncreaseAction = true,
+  bool hasDecreaseAction = true,
+  String label = '',
+  String decreasedValue = '',
+  String value = '',
+  String increasedValue = '',
 }) {
   final SemanticsData semanticsData = node.getSemanticsData();
 

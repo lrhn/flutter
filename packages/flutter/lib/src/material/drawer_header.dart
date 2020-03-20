@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -23,7 +23,7 @@ const double _kDrawerHeaderHeight = 160.0 + 1.0; // bottom edge
 ///
 ///  * [UserAccountsDrawerHeader], a variant of [DrawerHeader] that is
 ///    specialized for showing user accounts.
-///  * <https://material.google.com/patterns/navigation-drawer.html>
+///  * <https://material.io/design/components/navigation-drawer.html>
 class DrawerHeader extends StatelessWidget {
   /// Creates a material design drawer header.
   ///
@@ -31,10 +31,10 @@ class DrawerHeader extends StatelessWidget {
   const DrawerHeader({
     Key key,
     this.decoration,
-    this.margin: const EdgeInsets.only(bottom: 8.0),
-    this.padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-    this.duration: const Duration(milliseconds: 250),
-    this.curve: Curves.fastOutSlowIn,
+    this.margin = const EdgeInsets.only(bottom: 8.0),
+    this.padding = const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+    this.duration = const Duration(milliseconds: 250),
+    this.curve = Curves.fastOutSlowIn,
     @required this.child,
   }) : super(key: key);
 
@@ -77,22 +77,22 @@ class DrawerHeader extends StatelessWidget {
     assert(debugCheckHasMediaQuery(context));
     final ThemeData theme = Theme.of(context);
     final double statusBarHeight = MediaQuery.of(context).padding.top;
-    return new Container(
+    return Container(
       height: statusBarHeight + _kDrawerHeaderHeight,
       margin: margin,
-      decoration: new BoxDecoration(
-        border: new Border(
+      decoration: BoxDecoration(
+        border: Border(
           bottom: Divider.createBorderSide(context),
         ),
       ),
-      child: new AnimatedContainer(
-        padding: padding.add(new EdgeInsets.only(top: statusBarHeight)),
+      child: AnimatedContainer(
+        padding: padding.add(EdgeInsets.only(top: statusBarHeight)),
         decoration: decoration,
         duration: duration,
         curve: curve,
-        child: child == null ? null : new DefaultTextStyle(
-          style: theme.textTheme.body2,
-          child: new MediaQuery.removePadding(
+        child: child == null ? null : DefaultTextStyle(
+          style: theme.textTheme.bodyText1,
+          child: MediaQuery.removePadding(
             context: context,
             removeTop: true,
             child: child,

@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,19 +6,21 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
-const BoxDecoration kBoxDecorationA = const BoxDecoration(
-  color: const Color(0xFFFF0000),
+const BoxDecoration kBoxDecorationA = BoxDecoration(
+  color: Color(0xFFFF0000),
 );
 
-const BoxDecoration kBoxDecorationB = const BoxDecoration(
-  color: const Color(0xFF00FF00),
+const BoxDecoration kBoxDecorationB = BoxDecoration(
+  color: Color(0xFF00FF00),
 );
 
-const BoxDecoration kBoxDecorationC = const BoxDecoration(
-  color: const Color(0xFF0000FF),
+const BoxDecoration kBoxDecorationC = BoxDecoration(
+  color: Color(0xFF0000FF),
 );
 
 class TestBuildCounter extends StatelessWidget {
+  const TestBuildCounter({ Key key }) : super(key: key);
+
   static int buildCount = 0;
 
   @override
@@ -36,7 +38,7 @@ class FlipWidget extends StatefulWidget {
   final Widget right;
 
   @override
-  FlipWidgetState createState() => new FlipWidgetState();
+  FlipWidgetState createState() => FlipWidgetState();
 }
 
 class FlipWidgetState extends State<FlipWidget> {
@@ -54,6 +56,6 @@ class FlipWidgetState extends State<FlipWidget> {
   }
 }
 
-void flipStatefulWidget(WidgetTester tester, { bool skipOffstage: true }) {
+void flipStatefulWidget(WidgetTester tester, { bool skipOffstage = true }) {
   tester.state<FlipWidgetState>(find.byType(FlipWidget, skipOffstage: skipOffstage)).flip();
 }

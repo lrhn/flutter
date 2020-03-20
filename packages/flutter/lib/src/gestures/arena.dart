@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -33,7 +33,7 @@ abstract class GestureArenaMember {
   void rejectGesture(int pointer);
 }
 
-/// An interface to information to an arena.
+/// An interface to pass information to an arena.
 ///
 /// A given [GestureArenaMember] can have multiple entries in multiple arenas
 /// with different pointer ids.
@@ -59,7 +59,7 @@ class _GestureArena {
   bool isHeld = false;
   bool hasPendingSweep = false;
 
-  /// If a gesture attempts to win while the arena is still open, it becomes the
+  /// If a member attempts to win while the arena is still open, it becomes the
   /// "eager winner". We look for an eager winner when closing the arena to new
   /// participants, and if there is one, we resolve the arena in its favor at
   /// that time.
@@ -72,7 +72,7 @@ class _GestureArena {
 
   @override
   String toString() {
-    final StringBuffer buffer = new StringBuffer();
+    final StringBuffer buffer = StringBuffer();
     if (members.isEmpty) {
       buffer.write('<empty>');
     } else {
@@ -92,9 +92,9 @@ class _GestureArena {
   }
 }
 
-/// The first member to accept or the last member to not to reject wins.
+/// The first member to accept or the last member to not reject wins.
 ///
-/// See [https://flutter.io/gestures/#gesture-disambiguation] for more
+/// See <https://flutter.dev/gestures/#gesture-disambiguation> for more
 /// information about the role this class plays in the gesture system.
 ///
 /// To debug problems with gestures, consider using
@@ -106,11 +106,11 @@ class GestureArenaManager {
   GestureArenaEntry add(int pointer, GestureArenaMember member) {
     final _GestureArena state = _arenas.putIfAbsent(pointer, () {
       assert(_debugLogDiagnostic(pointer, '★ Opening new gesture arena.'));
-      return new _GestureArena();
+      return _GestureArena();
     });
     state.add(member);
     assert(_debugLogDiagnostic(pointer, 'Adding: $member'));
-    return new GestureArenaEntry._(this, pointer, member);
+    return GestureArenaEntry._(this, pointer, member);
   }
 
   /// Prevents new members from entering the arena.
@@ -256,7 +256,7 @@ class GestureArenaManager {
     assert(state.eagerWinner == null || state.eagerWinner == member);
     assert(!state.isOpen);
     _arenas.remove(pointer);
-    for (GestureArenaMember rejectedMember in state.members) {
+    for (final GestureArenaMember rejectedMember in state.members) {
       if (rejectedMember != member)
         rejectedMember.rejectGesture(pointer);
     }

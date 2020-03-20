@@ -1,31 +1,32 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart' show DragStartBehavior;
 
-const TextStyle testFont = const TextStyle(
-  color: const Color(0xFF00FF00),
+const TextStyle testFont = TextStyle(
+  color: Color(0xFF00FF00),
   fontFamily: 'Ahem',
 );
 
-Future<Null> pumpTest(WidgetTester tester, TargetPlatform platform) async {
-  await tester.pumpWidget(new Container());
-  await tester.pumpWidget(new MaterialApp(
-    theme: new ThemeData(
+Future<void> pumpTest(WidgetTester tester, TargetPlatform platform) async {
+  await tester.pumpWidget(Container());
+  await tester.pumpWidget(MaterialApp(
+    theme: ThemeData(
       platform: platform,
     ),
-    home: new Container(
+    home: Container(
       color: const Color(0xFF111111),
-      child: new ListView.builder(
+      child: ListView.builder(
+        dragStartBehavior: DragStartBehavior.down,
         itemBuilder: (BuildContext context, int index) {
-          return new Text('$index', style: testFont);
+          return Text('$index', style: testFont);
         },
       ),
     ),
   ));
-  return null;
 }
 
 const double dragOffset = 213.82;
@@ -42,7 +43,23 @@ void main() {
     await tester.pump(); // trigger fling
     expect(getCurrentOffset(), dragOffset);
     await tester.pump(const Duration(seconds: 5));
-    final double result1 = getCurrentOffset();
+    final double androidResult = getCurrentOffset();
+
+    await pumpTest(tester, TargetPlatform.linux);
+    await tester.fling(find.byType(ListView), const Offset(0.0, -dragOffset), 1000.0);
+    expect(getCurrentOffset(), dragOffset);
+    await tester.pump(); // trigger fling
+    expect(getCurrentOffset(), dragOffset);
+    await tester.pump(const Duration(seconds: 5));
+    final double linuxResult = getCurrentOffset();
+
+    await pumpTest(tester, TargetPlatform.windows);
+    await tester.fling(find.byType(ListView), const Offset(0.0, -dragOffset), 1000.0);
+    expect(getCurrentOffset(), dragOffset);
+    await tester.pump(); // trigger fling
+    expect(getCurrentOffset(), dragOffset);
+    await tester.pump(const Duration(seconds: 5));
+    final double windowsResult = getCurrentOffset();
 
     await pumpTest(tester, TargetPlatform.iOS);
     await tester.fling(find.byType(ListView), const Offset(0.0, -dragOffset), 1000.0);
@@ -51,21 +68,41 @@ void main() {
     await tester.pump(); // trigger fling
     expect(getCurrentOffset(), moreOrLessEquals(210.71026666666666));
     await tester.pump(const Duration(seconds: 5));
-    final double result2 = getCurrentOffset();
+    final double iOSResult = getCurrentOffset();
 
-    expect(result1, lessThan(result2)); // iOS (result2) is slipperier than Android (result1)
+    await pumpTest(tester, TargetPlatform.macOS);
+    await tester.fling(find.byType(ListView), const Offset(0.0, -dragOffset), 1000.0);
+    // Scroll starts ease into the scroll on iOS.
+    expect(getCurrentOffset(), moreOrLessEquals(210.71026666666666));
+    await tester.pump(); // trigger fling
+    expect(getCurrentOffset(), moreOrLessEquals(210.71026666666666));
+    await tester.pump(const Duration(seconds: 5));
+    final double macOSResult = getCurrentOffset();
+
+    expect(androidResult, lessThan(iOSResult)); // iOS is slipperier than Android
+    expect(androidResult, lessThan(macOSResult)); // macOS is slipperier than Android
+    expect(linuxResult, lessThan(iOSResult)); // iOS is slipperier than Linux
+    expect(linuxResult, lessThan(macOSResult)); // macOS is slipperier than Linux
+    expect(windowsResult, lessThan(iOSResult)); // iOS is slipperier than Windows
+    expect(windowsResult, lessThan(macOSResult)); // macOS is slipperier than Windows
+    expect(windowsResult, equals(androidResult));
+    expect(windowsResult, equals(androidResult));
+    expect(linuxResult, equals(androidResult));
+    expect(linuxResult, equals(androidResult));
   });
 
   testWidgets('fling and tap to stop', (WidgetTester tester) async {
     final List<String> log = <String>[];
-
-    final List<Widget> textWidgets = <Widget>[];
-    for (int i = 0; i < 250; i += 1)
-      textWidgets.add(new GestureDetector(onTap: () { log.add('tap $i'); }, child: new Text('$i', style: testFont)));
     await tester.pumpWidget(
-      new Directionality(
+      Directionality(
         textDirection: TextDirection.ltr,
-        child: new ListView(children: textWidgets)
+        child: ListView(
+          dragStartBehavior: DragStartBehavior.down,
+          children: List<Widget>.generate(250, (int i) => GestureDetector(
+            onTap: () { log.add('tap $i'); },
+            child: Text('$i', style: testFont),
+          )),
+        ),
       ),
     );
 
@@ -82,18 +119,20 @@ void main() {
     await tester.tap(find.byType(Scrollable));
     await tester.pump(const Duration(milliseconds: 50));
     expect(log, equals(<String>['tap 21', 'tap 35']));
-  });
+  }, skip: isBrowser);
 
   testWidgets('fling and wait and tap', (WidgetTester tester) async {
     final List<String> log = <String>[];
-
-    final List<Widget> textWidgets = <Widget>[];
-    for (int i = 0; i < 250; i += 1)
-      textWidgets.add(new GestureDetector(onTap: () { log.add('tap $i'); }, child: new Text('$i', style: testFont)));
     await tester.pumpWidget(
-      new Directionality(
+      Directionality(
         textDirection: TextDirection.ltr,
-        child: new ListView(children: textWidgets)
+        child: ListView(
+          dragStartBehavior: DragStartBehavior.down,
+          children: List<Widget>.generate(250, (int i) => GestureDetector(
+            onTap: () { log.add('tap $i'); },
+            child: Text('$i', style: testFont),
+          )),
+        ),
       ),
     );
 
@@ -109,5 +148,5 @@ void main() {
     await tester.tap(find.byType(Scrollable));
     await tester.pump(const Duration(milliseconds: 50));
     expect(log, equals(<String>['tap 21', 'tap 48']));
-  });
+  }, skip: isBrowser);
 }

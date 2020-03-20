@@ -1,22 +1,25 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'simulation.dart';
+
+// Examples can assume:
+// AnimationController _controller;
 
 /// A simulation that applies a constant accelerating force.
 ///
 /// Models a particle that follows Newton's second law of motion. The simulation
 /// ends when the position reaches a defined point.
 ///
-/// ## Sample code
+/// {@tool snippet}
 ///
 /// This method triggers an [AnimationController] (a previously constructed
 /// `_controller` field) to simulate a fall of 300 pixels.
 ///
 /// ```dart
 /// void _startFall() {
-///   _controller.animateWith(new GravitySimulation(
+///   _controller.animateWith(GravitySimulation(
 ///     10.0, // acceleration, pixels per second per second
 ///     0.0, // starting position, pixels
 ///     300.0, // ending position, pixels
@@ -24,6 +27,7 @@ import 'simulation.dart';
 ///   ));
 /// }
 /// ```
+/// {@end-tool}
 ///
 /// This [AnimationController] could be used with an [AnimatedBuilder] to
 /// animate the position of a child as if it was falling.
@@ -51,7 +55,7 @@ class GravitySimulation extends Simulation {
     double acceleration,
     double distance,
     double endDistance,
-    double velocity
+    double velocity,
   ) : assert(acceleration != null),
       assert(distance != null),
       assert(velocity != null),

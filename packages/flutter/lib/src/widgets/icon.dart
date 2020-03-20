@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -21,6 +21,42 @@ import 'icon_theme_data.dart';
 /// Typically this is introduced automatically by the [WidgetsApp] or
 /// [MaterialApp].
 ///
+/// This widget assumes that the rendered icon is squared. Non-squared icons may
+/// render incorrectly.
+///
+/// {@tool snippet}
+///
+/// This example shows how to create a [Row] of [Icon]s in different colors and
+/// sizes. The first [Icon] uses a [semanticLabel] to announce in accessibility
+/// modes like TalkBack and VoiceOver.
+///
+/// ![A row of icons representing a pink heart, a green musical note, and a blue umbrella](https://flutter.github.io/assets-for-api-docs/assets/widgets/icon.png)
+///
+/// ```dart
+/// Row(
+///   mainAxisAlignment: MainAxisAlignment.spaceAround,
+///   children: const <Widget>[
+///     Icon(
+///       Icons.favorite,
+///       color: Colors.pink,
+///       size: 24.0,
+///       semanticLabel: 'Text to announce in accessibility modes',
+///     ),
+///     Icon(
+///       Icons.audiotrack,
+///       color: Colors.green,
+///       size: 30.0,
+///     ),
+///     Icon(
+///       Icons.beach_access,
+///       color: Colors.blue,
+///       size: 36.0,
+///     ),
+///   ],
+/// )
+/// ```
+/// {@end-tool}
+///
 /// See also:
 ///
 ///  * [IconButton], for interactive icons.
@@ -31,7 +67,8 @@ class Icon extends StatelessWidget {
   /// Creates an icon.
   ///
   /// The [size] and [color] default to the value given by the current [IconTheme].
-  const Icon(this.icon, {
+  const Icon(
+    this.icon, {
     Key key,
     this.size,
     this.color,
@@ -76,14 +113,16 @@ class Icon extends StatelessWidget {
   /// See [Theme] to set the current theme and [ThemeData.brightness]
   /// for setting the current theme's brightness.
   ///
+  /// {@tool snippet}
   /// Typically, a material design color will be used, as follows:
   ///
   /// ```dart
-  ///  new Icon(
-  ///    icon: Icons.widgets,
-  ///    color: Colors.blue.shade400,
-  ///  ),
+  /// Icon(
+  ///   Icons.widgets,
+  ///   color: Colors.blue.shade400,
+  /// )
   /// ```
+  /// {@end-tool}
   final Color color;
 
   /// Semantic label for the icon.
@@ -122,9 +161,9 @@ class Icon extends StatelessWidget {
     final double iconSize = size ?? iconTheme.size;
 
     if (icon == null) {
-      return new Semantics(
+      return Semantics(
         label: semanticLabel,
-        child: new SizedBox(width: iconSize, height: iconSize)
+        child: SizedBox(width: iconSize, height: iconSize),
       );
     }
 
@@ -133,11 +172,12 @@ class Icon extends StatelessWidget {
     if (iconOpacity != 1.0)
       iconColor = iconColor.withOpacity(iconColor.opacity * iconOpacity);
 
-    Widget iconWidget = new RichText(
+    Widget iconWidget = RichText(
+      overflow: TextOverflow.visible, // Never clip.
       textDirection: textDirection, // Since we already fetched it for the assert...
-      text: new TextSpan(
-        text: new String.fromCharCode(icon.codePoint),
-        style: new TextStyle(
+      text: TextSpan(
+        text: String.fromCharCode(icon.codePoint),
+        style: TextStyle(
           inherit: false,
           color: iconColor,
           fontSize: iconSize,
@@ -150,8 +190,8 @@ class Icon extends StatelessWidget {
     if (icon.matchTextDirection) {
       switch (textDirection) {
         case TextDirection.rtl:
-          iconWidget = new Transform(
-            transform: new Matrix4.identity()..scale(-1.0, 1.0, 1.0),
+          iconWidget = Transform(
+            transform: Matrix4.identity()..scale(-1.0, 1.0, 1.0),
             alignment: Alignment.center,
             transformHitTests: false,
             child: iconWidget,
@@ -162,13 +202,13 @@ class Icon extends StatelessWidget {
       }
     }
 
-    return new Semantics(
+    return Semantics(
       label: semanticLabel,
-      child: new ExcludeSemantics(
-        child: new SizedBox(
+      child: ExcludeSemantics(
+        child: SizedBox(
           width: iconSize,
           height: iconSize,
-          child: new Center(
+          child: Center(
             child: iconWidget,
           ),
         ),
@@ -179,8 +219,8 @@ class Icon extends StatelessWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(new DiagnosticsProperty<IconData>('icon', icon, ifNull: '<empty>', showName: false));
-    properties.add(new DoubleProperty('size', size, defaultValue: null));
-    properties.add(new DiagnosticsProperty<Color>('color', color, defaultValue: null));
+    properties.add(IconDataProperty('icon', icon, ifNull: '<empty>', showName: false));
+    properties.add(DoubleProperty('size', size, defaultValue: null));
+    properties.add(ColorProperty('color', color, defaultValue: null));
   }
 }
