@@ -9,14 +9,19 @@ import 'package:flutter_test/flutter_test.dart';
 import '../rendering/mock_canvas.dart';
 
 void main() {
-  testWidgets('The Ink widget renders a Container by default', (WidgetTester tester) async {
+  testWidgets('The Ink widget renders a SizedBox by default', (WidgetTester tester) async {
     await tester.pumpWidget(
       Material(
         child: Ink(),
       ),
     );
-    expect(tester.getSize(find.byType(Container)).height, 600.0);
-    expect(tester.getSize(find.byType(Container)).width, 800.0);
+    Finder sizedBox = find.descendant(
+      of: find.byType(Ink),
+      matching: find.byType(SizedBox),
+    );
+    expect(sizedBox, findsOneWidget);
+    expect(tester.getSize(sizedBox).height, 600.0);
+    expect(tester.getSize(sizedBox).width, 800.0);
 
     const double height = 150.0;
     const double width = 200.0;
@@ -31,8 +36,13 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(tester.getSize(find.byType(Container)).height, height);
-    expect(tester.getSize(find.byType(Container)).width, width);
+    sizedBox = find.descendant(
+      of: find.byType(Ink),
+      matching: find.byType(SizedBox),
+    );
+    expect(sizedBox, findsNWidgets(2));
+    expect(tester.getSize(sizedBox.at(0)).height, height);
+    expect(tester.getSize(sizedBox.at(0)).width, width);
   });
 
   testWidgets('The InkWell widget renders an ink splash', (WidgetTester tester) async {
@@ -65,7 +75,7 @@ void main() {
     await tester.pump(); // start gesture
     await tester.pump(const Duration(milliseconds: 200)); // wait for splash to be well under way
 
-    final RenderBox box = Material.of(tester.element(find.byType(InkWell)))! as RenderBox;
+    final RenderBox box = Material.of(tester.element(find.byType(InkWell))) as RenderBox;
     expect(
       box,
       paints
@@ -117,7 +127,7 @@ void main() {
     await tester.tapAt(tapDownOffset);
     await tester.pump(); // start gesture
 
-    final RenderBox box = Material.of(tester.element(find.byType(InkWell)))! as RenderBox;
+    final RenderBox box = Material.of(tester.element(find.byType(InkWell)))as RenderBox;
 
     bool offsetsAreClose(Offset a, Offset b) => (a - b).distance < 1.0;
     bool radiiAreClose(double a, double b) => (a - b).abs() < 1.0;
@@ -195,7 +205,7 @@ void main() {
     await tester.pump(); // start gesture
     await tester.pump(const Duration(milliseconds: 200)); // wait for splash to be well under way
 
-    final RenderBox box = Material.of(tester.element(find.byType(InkWell)))! as RenderBox;
+    final RenderBox box = Material.of(tester.element(find.byType(InkWell)))as RenderBox;
     expect(
       box,
       paints
@@ -327,7 +337,7 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.space);
     await tester.pump();
 
-    final RenderBox box = Material.of(tester.element(find.byType(InkWell)))! as RenderBox;
+    final RenderBox box = Material.of(tester.element(find.byType(InkWell)))as RenderBox;
 
     // ripplePattern always add a translation of topLeft.
     expect(box, ripplePattern(30.0, 0));
@@ -423,7 +433,7 @@ void main() {
     await gesture.moveTo(Offset.zero);
     await gesture.up(); // generates a tap cancel
 
-    final RenderBox box = Material.of(tester.element(find.byType(InkWell)))! as RenderBox;
+    final RenderBox box = Material.of(tester.element(find.byType(InkWell)))as RenderBox;
     expect(box, paints..everything((Symbol method, List<dynamic> arguments) {
       if (method != #drawCircle) {
         return true;

@@ -82,7 +82,6 @@ class WebDriverService extends DriverService {
           disablePortPublication: debuggingOptions.disablePortPublication,
         ),
       stayResident: true,
-      urlTunneller: null,
       flutterProject: FlutterProject.current(),
       fileSystem: globals.fs,
       usage: globals.flutterUsage,
@@ -96,15 +95,15 @@ class WebDriverService extends DriverService {
     );
 
     bool isAppStarted = false;
-    await Future.any<Object>(<Future<Object>>[
+    await Future.any(<Future<Object?>>[
       runFuture.then((int? result) {
         _runResult = result;
         return null;
-      } as FutureOr<Object> Function(int?)),
+      }),
       appStartedCompleter.future.then((_) {
         isAppStarted = true;
         return null;
-      } as FutureOr<Object> Function(void)),
+      }),
     ]);
 
     if (_runResult != null) {
@@ -136,6 +135,7 @@ class WebDriverService extends DriverService {
     String? browserName,
     bool? androidEmulator,
     int? driverPort,
+    List<String> webBrowserFlags = const <String>[],
     List<String>? browserDimension,
     String? profileMemory,
   }) async {
@@ -144,7 +144,12 @@ class WebDriverService extends DriverService {
     try {
       webDriver = await async_io.createDriver(
         uri: Uri.parse('http://localhost:$driverPort/'),
-        desired: getDesiredCapabilities(browser, headless, chromeBinary),
+        desired: getDesiredCapabilities(
+          browser,
+          headless,
+          webBrowserFlags: webBrowserFlags,
+          chromeBinary: chromeBinary,
+        ),
       );
     } on SocketException catch (error) {
       _logger.printTrace('$error');
@@ -234,10 +239,15 @@ enum Browser {
   safari,
 }
 
-/// Returns desired capabilities for given [browser], [headless] and
-/// [chromeBinary].
+/// Returns desired capabilities for given [browser], [headless], [chromeBinary]
+/// and [webBrowserFlags].
 @visibleForTesting
-Map<String, dynamic> getDesiredCapabilities(Browser browser, bool? headless, [String? chromeBinary]) {
+Map<String, dynamic> getDesiredCapabilities(
+  Browser browser,
+  bool? headless, {
+  List<String> webBrowserFlags = const <String>[],
+  String? chromeBinary,
+}) {
   switch (browser) {
     case Browser.chrome:
       return <String, dynamic>{
@@ -262,6 +272,7 @@ Map<String, dynamic> getDesiredCapabilities(Browser browser, bool? headless, [St
             '--no-sandbox',
             '--no-first-run',
             if (headless!) '--headless',
+            ...webBrowserFlags,
           ],
           'perfLoggingPrefs': <String, String>{
             'traceCategories':
@@ -278,6 +289,7 @@ Map<String, dynamic> getDesiredCapabilities(Browser browser, bool? headless, [St
         'moz:firefoxOptions' : <String, dynamic>{
           'args': <String>[
             if (headless!) '-headless',
+            ...webBrowserFlags,
           ],
           'prefs': <String, dynamic>{
             'dom.file.createInChild': true,
@@ -313,7 +325,10 @@ Map<String, dynamic> getDesiredCapabilities(Browser browser, bool? headless, [St
         'platformName': 'android',
         'goog:chromeOptions': <String, dynamic>{
           'androidPackage': 'com.android.chrome',
-          'args': <String>['--disable-fullscreen'],
+          'args': <String>[
+            '--disable-fullscreen',
+            ...webBrowserFlags,
+          ],
         },
       };
   }

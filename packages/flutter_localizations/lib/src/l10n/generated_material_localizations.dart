@@ -303,7 +303,7 @@ class MaterialLocalizationAf extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Lisensies';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Kieslysbalkkieslys';
 
   @override
   String get modalBarrierDismissLabel => 'Maak toe';
@@ -745,7 +745,7 @@ class MaterialLocalizationAm extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'ፈቃዶች';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'የምናሌ አሞሌ ምናሌ';
 
   @override
   String get modalBarrierDismissLabel => 'አሰናብት';
@@ -1187,7 +1187,7 @@ class MaterialLocalizationAr extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'التراخيص';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'قائمة شريط القوائم';
 
   @override
   String get modalBarrierDismissLabel => 'رفض';
@@ -1629,7 +1629,7 @@ class MaterialLocalizationAs extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'অনুজ্ঞাপত্ৰসমূহ';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'মেনু বাৰ মেনু';
 
   @override
   String get modalBarrierDismissLabel => 'অগ্ৰাহ্য কৰক';
@@ -2071,7 +2071,7 @@ class MaterialLocalizationAz extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Lisenziyalar';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menyu paneli menyusu';
 
   @override
   String get modalBarrierDismissLabel => 'İmtina edin';
@@ -2513,7 +2513,7 @@ class MaterialLocalizationBe extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Ліцэнзіі';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Меню "Панэль меню"';
 
   @override
   String get modalBarrierDismissLabel => 'Адхіліць';
@@ -2955,7 +2955,7 @@ class MaterialLocalizationBg extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Лицензи';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Меню на лентата с менюта';
 
   @override
   String get modalBarrierDismissLabel => 'Отхвърляне';
@@ -3397,7 +3397,7 @@ class MaterialLocalizationBn extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'লাইসেন্স';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'মেনু বার মেনু';
 
   @override
   String get modalBarrierDismissLabel => 'খারিজ করুন';
@@ -3839,7 +3839,7 @@ class MaterialLocalizationBs extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Licence';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Meni trake menija';
 
   @override
   String get modalBarrierDismissLabel => 'Odbaci';
@@ -4281,7 +4281,7 @@ class MaterialLocalizationCa extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Llicències';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menú de la barra de menú';
 
   @override
   String get modalBarrierDismissLabel => 'Ignora';
@@ -4723,7 +4723,7 @@ class MaterialLocalizationCs extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Licence';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Nabídka na liště s nabídkou';
 
   @override
   String get modalBarrierDismissLabel => 'Zavřít';
@@ -5165,7 +5165,7 @@ class MaterialLocalizationDa extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Licenser';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menuen for menulinjen';
 
   @override
   String get modalBarrierDismissLabel => 'Afvis';
@@ -5607,7 +5607,7 @@ class MaterialLocalizationDe extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Lizenzen';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menü in der Menüleiste';
 
   @override
   String get modalBarrierDismissLabel => 'Schließen';
@@ -6086,7 +6086,7 @@ class MaterialLocalizationEl extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Άδειες';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Μενού γραμμής μενού';
 
   @override
   String get modalBarrierDismissLabel => 'Παράβλεψη';
@@ -6279,10 +6279,10 @@ class MaterialLocalizationEn extends GlobalMaterialLocalizations {
   String get calendarModeButtonLabel => 'Switch to calendar';
 
   @override
-  String get cancelButtonLabel => 'CANCEL';
+  String get cancelButtonLabel => 'Cancel';
 
   @override
-  String get closeButtonLabel => 'CLOSE';
+  String get closeButtonLabel => 'Close';
 
   @override
   String get closeButtonTooltip => 'Close';
@@ -6291,7 +6291,7 @@ class MaterialLocalizationEn extends GlobalMaterialLocalizations {
   String get collapsedIconTapHint => 'Expand';
 
   @override
-  String get continueButtonLabel => 'CONTINUE';
+  String get continueButtonLabel => 'Continue';
 
   @override
   String get copyButtonLabel => 'Copy';
@@ -6309,7 +6309,7 @@ class MaterialLocalizationEn extends GlobalMaterialLocalizations {
   String get dateOutOfRangeLabel => 'Out of range.';
 
   @override
-  String get datePickerHelpText => 'SELECT DATE';
+  String get datePickerHelpText => 'Select date';
 
   @override
   String get dateRangeEndDateSemanticLabelRaw => r'End date $fullDate';
@@ -6318,7 +6318,7 @@ class MaterialLocalizationEn extends GlobalMaterialLocalizations {
   String get dateRangeEndLabel => 'End Date';
 
   @override
-  String get dateRangePickerHelpText => 'SELECT RANGE';
+  String get dateRangePickerHelpText => 'Select range';
 
   @override
   String get dateRangeStartDateSemanticLabelRaw => r'Start date $fullDate';
@@ -6612,7 +6612,7 @@ class MaterialLocalizationEn extends GlobalMaterialLocalizations {
   String get rowsPerPageTitle => 'Rows per page:';
 
   @override
-  String get saveButtonLabel => 'SAVE';
+  String get saveButtonLabel => 'Save';
 
   @override
   ScriptCategory get scriptCategory => ScriptCategory.englishLike;
@@ -6660,7 +6660,7 @@ class MaterialLocalizationEn extends GlobalMaterialLocalizations {
   TimeOfDayFormat get timeOfDayFormatRaw => TimeOfDayFormat.h_colon_mm_space_a;
 
   @override
-  String get timePickerDialHelpText => 'SELECT TIME';
+  String get timePickerDialHelpText => 'Select time';
 
   @override
   String get timePickerHourLabel => 'Hour';
@@ -6669,7 +6669,7 @@ class MaterialLocalizationEn extends GlobalMaterialLocalizations {
   String get timePickerHourModeAnnouncement => 'Select hours';
 
   @override
-  String get timePickerInputHelpText => 'ENTER TIME';
+  String get timePickerInputHelpText => 'Enter time';
 
   @override
   String get timePickerMinuteLabel => 'Minute';
@@ -6684,7 +6684,7 @@ class MaterialLocalizationEn extends GlobalMaterialLocalizations {
   String get unspecifiedDateRange => 'Date Range';
 
   @override
-  String get viewLicensesButtonLabel => 'VIEW LICENSES';
+  String get viewLicensesButtonLabel => 'View licenses';
 }
 
 /// The translations for English, as used in Australia (`en_AU`).
@@ -6730,7 +6730,22 @@ class MaterialLocalizationEnAu extends MaterialLocalizationEn {
   String get keyboardKeyNumpadEnter => 'Num enter';
 
   @override
+  String get timePickerDialHelpText => 'SELECT TIME';
+
+  @override
+  String get timePickerInputHelpText => 'ENTER TIME';
+
+  @override
   String get dateInputLabel => 'Enter date';
+
+  @override
+  String get dateRangePickerHelpText => 'SELECT RANGE';
+
+  @override
+  String get datePickerHelpText => 'SELECT DATE';
+
+  @override
+  String get saveButtonLabel => 'SAVE';
 
   @override
   String get dateRangeEndLabel => 'End date';
@@ -6752,6 +6767,15 @@ class MaterialLocalizationEnAu extends MaterialLocalizationEn {
 
   @override
   String get licensesPackageDetailTextOther => r'$licenseCount licences';
+
+  @override
+  String get cancelButtonLabel => 'CANCEL';
+
+  @override
+  String get closeButtonLabel => 'CLOSE';
+
+  @override
+  String get continueButtonLabel => 'CONTINUE';
 
   @override
   String get viewLicensesButtonLabel => 'VIEW LICENCES';
@@ -6812,7 +6836,22 @@ class MaterialLocalizationEnCa extends MaterialLocalizationEn {
   String get keyboardKeyNumpadEnter => 'Num enter';
 
   @override
+  String get timePickerDialHelpText => 'SELECT TIME';
+
+  @override
+  String get timePickerInputHelpText => 'ENTER TIME';
+
+  @override
   String get dateInputLabel => 'Enter date';
+
+  @override
+  String get dateRangePickerHelpText => 'SELECT RANGE';
+
+  @override
+  String get datePickerHelpText => 'SELECT DATE';
+
+  @override
+  String get saveButtonLabel => 'SAVE';
 
   @override
   String get dateRangeEndLabel => 'End date';
@@ -6834,6 +6873,15 @@ class MaterialLocalizationEnCa extends MaterialLocalizationEn {
 
   @override
   String get licensesPackageDetailTextOther => r'$licenseCount licences';
+
+  @override
+  String get cancelButtonLabel => 'CANCEL';
+
+  @override
+  String get closeButtonLabel => 'CLOSE';
+
+  @override
+  String get continueButtonLabel => 'CONTINUE';
 
   @override
   String get viewLicensesButtonLabel => 'VIEW LICENCES';
@@ -6894,7 +6942,22 @@ class MaterialLocalizationEnGb extends MaterialLocalizationEn {
   String get keyboardKeyNumpadEnter => 'Num enter';
 
   @override
+  String get timePickerDialHelpText => 'SELECT TIME';
+
+  @override
+  String get timePickerInputHelpText => 'ENTER TIME';
+
+  @override
   String get dateInputLabel => 'Enter date';
+
+  @override
+  String get dateRangePickerHelpText => 'SELECT RANGE';
+
+  @override
+  String get datePickerHelpText => 'SELECT DATE';
+
+  @override
+  String get saveButtonLabel => 'SAVE';
 
   @override
   String get dateRangeEndLabel => 'End date';
@@ -6922,6 +6985,15 @@ class MaterialLocalizationEnGb extends MaterialLocalizationEn {
 
   @override
   String get licensesPackageDetailTextOther => r'$licenseCount licences';
+
+  @override
+  String get closeButtonLabel => 'CLOSE';
+
+  @override
+  String get continueButtonLabel => 'CONTINUE';
+
+  @override
+  String get cancelButtonLabel => 'CANCEL';
 
   @override
   String get popupMenuLabel => 'Pop-up menu';
@@ -6979,7 +7051,22 @@ class MaterialLocalizationEnIe extends MaterialLocalizationEn {
   String get keyboardKeyNumpadEnter => 'Num enter';
 
   @override
+  String get timePickerDialHelpText => 'SELECT TIME';
+
+  @override
+  String get timePickerInputHelpText => 'ENTER TIME';
+
+  @override
   String get dateInputLabel => 'Enter date';
+
+  @override
+  String get dateRangePickerHelpText => 'SELECT RANGE';
+
+  @override
+  String get datePickerHelpText => 'SELECT DATE';
+
+  @override
+  String get saveButtonLabel => 'SAVE';
 
   @override
   String get dateRangeEndLabel => 'End date';
@@ -7007,6 +7094,15 @@ class MaterialLocalizationEnIe extends MaterialLocalizationEn {
 
   @override
   String get licensesPackageDetailTextOther => r'$licenseCount licences';
+
+  @override
+  String get closeButtonLabel => 'CLOSE';
+
+  @override
+  String get continueButtonLabel => 'CONTINUE';
+
+  @override
+  String get cancelButtonLabel => 'CANCEL';
 
   @override
   String get popupMenuLabel => 'Pop-up menu';
@@ -7064,7 +7160,22 @@ class MaterialLocalizationEnIn extends MaterialLocalizationEn {
   String get keyboardKeyNumpadEnter => 'Num enter';
 
   @override
+  String get timePickerDialHelpText => 'SELECT TIME';
+
+  @override
+  String get timePickerInputHelpText => 'ENTER TIME';
+
+  @override
   String get dateInputLabel => 'Enter date';
+
+  @override
+  String get dateRangePickerHelpText => 'SELECT RANGE';
+
+  @override
+  String get datePickerHelpText => 'SELECT DATE';
+
+  @override
+  String get saveButtonLabel => 'SAVE';
 
   @override
   String get dateRangeEndLabel => 'End date';
@@ -7086,6 +7197,15 @@ class MaterialLocalizationEnIn extends MaterialLocalizationEn {
 
   @override
   String get licensesPackageDetailTextOther => r'$licenseCount licences';
+
+  @override
+  String get cancelButtonLabel => 'CANCEL';
+
+  @override
+  String get closeButtonLabel => 'CLOSE';
+
+  @override
+  String get continueButtonLabel => 'CONTINUE';
 
   @override
   String get viewLicensesButtonLabel => 'VIEW LICENCES';
@@ -7146,7 +7266,22 @@ class MaterialLocalizationEnNz extends MaterialLocalizationEn {
   String get keyboardKeyNumpadEnter => 'Num enter';
 
   @override
+  String get timePickerDialHelpText => 'SELECT TIME';
+
+  @override
+  String get timePickerInputHelpText => 'ENTER TIME';
+
+  @override
   String get dateInputLabel => 'Enter date';
+
+  @override
+  String get dateRangePickerHelpText => 'SELECT RANGE';
+
+  @override
+  String get datePickerHelpText => 'SELECT DATE';
+
+  @override
+  String get saveButtonLabel => 'SAVE';
 
   @override
   String get dateRangeEndLabel => 'End date';
@@ -7168,6 +7303,15 @@ class MaterialLocalizationEnNz extends MaterialLocalizationEn {
 
   @override
   String get licensesPackageDetailTextOther => r'$licenseCount licences';
+
+  @override
+  String get cancelButtonLabel => 'CANCEL';
+
+  @override
+  String get closeButtonLabel => 'CLOSE';
+
+  @override
+  String get continueButtonLabel => 'CONTINUE';
 
   @override
   String get viewLicensesButtonLabel => 'VIEW LICENCES';
@@ -7228,7 +7372,22 @@ class MaterialLocalizationEnSg extends MaterialLocalizationEn {
   String get keyboardKeyNumpadEnter => 'Num enter';
 
   @override
+  String get timePickerDialHelpText => 'SELECT TIME';
+
+  @override
+  String get timePickerInputHelpText => 'ENTER TIME';
+
+  @override
   String get dateInputLabel => 'Enter date';
+
+  @override
+  String get dateRangePickerHelpText => 'SELECT RANGE';
+
+  @override
+  String get datePickerHelpText => 'SELECT DATE';
+
+  @override
+  String get saveButtonLabel => 'SAVE';
 
   @override
   String get dateRangeEndLabel => 'End date';
@@ -7250,6 +7409,15 @@ class MaterialLocalizationEnSg extends MaterialLocalizationEn {
 
   @override
   String get licensesPackageDetailTextOther => r'$licenseCount licences';
+
+  @override
+  String get cancelButtonLabel => 'CANCEL';
+
+  @override
+  String get closeButtonLabel => 'CLOSE';
+
+  @override
+  String get continueButtonLabel => 'CONTINUE';
 
   @override
   String get viewLicensesButtonLabel => 'VIEW LICENCES';
@@ -7310,7 +7478,22 @@ class MaterialLocalizationEnZa extends MaterialLocalizationEn {
   String get keyboardKeyNumpadEnter => 'Num enter';
 
   @override
+  String get timePickerDialHelpText => 'SELECT TIME';
+
+  @override
+  String get timePickerInputHelpText => 'ENTER TIME';
+
+  @override
   String get dateInputLabel => 'Enter date';
+
+  @override
+  String get dateRangePickerHelpText => 'SELECT RANGE';
+
+  @override
+  String get datePickerHelpText => 'SELECT DATE';
+
+  @override
+  String get saveButtonLabel => 'SAVE';
 
   @override
   String get dateRangeEndLabel => 'End date';
@@ -7338,6 +7521,15 @@ class MaterialLocalizationEnZa extends MaterialLocalizationEn {
 
   @override
   String get licensesPackageDetailTextOther => r'$licenseCount licences';
+
+  @override
+  String get closeButtonLabel => 'CLOSE';
+
+  @override
+  String get continueButtonLabel => 'CONTINUE';
+
+  @override
+  String get cancelButtonLabel => 'CANCEL';
 
   @override
   String get popupMenuLabel => 'Pop-up menu';
@@ -7635,7 +7827,7 @@ class MaterialLocalizationEs extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Licencias';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menú de la barra de menú';
 
   @override
   String get modalBarrierDismissLabel => 'Cerrar';
@@ -11280,7 +11472,7 @@ class MaterialLocalizationEt extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Litsentsid';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menüüriba menüü';
 
   @override
   String get modalBarrierDismissLabel => 'Loobu';
@@ -11722,7 +11914,7 @@ class MaterialLocalizationEu extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Lizentziak';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menu-barraren menua';
 
   @override
   String get modalBarrierDismissLabel => 'Baztertu';
@@ -12164,7 +12356,7 @@ class MaterialLocalizationFa extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'مجوزها';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'منوی نوار منو';
 
   @override
   String get modalBarrierDismissLabel => 'نپذیرفتن';
@@ -12606,7 +12798,7 @@ class MaterialLocalizationFi extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Lisenssit';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Valikkopalkki';
 
   @override
   String get modalBarrierDismissLabel => 'Ohita';
@@ -13048,7 +13240,7 @@ class MaterialLocalizationFil extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Mga Lisensya';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menu sa menu bar';
 
   @override
   String get modalBarrierDismissLabel => 'I-dismiss';
@@ -13490,7 +13682,7 @@ class MaterialLocalizationFr extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Licences';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menu de la barre de menu';
 
   @override
   String get modalBarrierDismissLabel => 'Ignorer';
@@ -14068,7 +14260,7 @@ class MaterialLocalizationGl extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Licenzas';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menú da barra de menú';
 
   @override
   String get modalBarrierDismissLabel => 'Ignorar';
@@ -14510,7 +14702,7 @@ class MaterialLocalizationGsw extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Lizenzen';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menü in der Menüleiste';
 
   @override
   String get modalBarrierDismissLabel => 'Schließen';
@@ -14952,7 +15144,7 @@ class MaterialLocalizationGu extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'લાઇસન્સ';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'મેનૂ બાર મેનૂ';
 
   @override
   String get modalBarrierDismissLabel => 'છોડી દો';
@@ -15394,7 +15586,7 @@ class MaterialLocalizationHe extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'רישיונות';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'תפריט בסרגל התפריטים';
 
   @override
   String get modalBarrierDismissLabel => 'סגירה';
@@ -15836,7 +16028,7 @@ class MaterialLocalizationHi extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'लाइसेंस';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'मेन्यू बार का मेन्यू';
 
   @override
   String get modalBarrierDismissLabel => 'खारिज करें';
@@ -16278,7 +16470,7 @@ class MaterialLocalizationHr extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Licence';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Izbornik trake izbornika';
 
   @override
   String get modalBarrierDismissLabel => 'Odbaci';
@@ -16720,7 +16912,7 @@ class MaterialLocalizationHu extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Licencek';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menüsor menüje';
 
   @override
   String get modalBarrierDismissLabel => 'Elvetés';
@@ -17162,7 +17354,7 @@ class MaterialLocalizationHy extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Արտոնագրեր';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Ընտրացանկի գոտու ընտրացանկ';
 
   @override
   String get modalBarrierDismissLabel => 'Փակել';
@@ -17604,7 +17796,7 @@ class MaterialLocalizationId extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Lisensi';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menu panel menu';
 
   @override
   String get modalBarrierDismissLabel => 'Tutup';
@@ -18046,7 +18238,7 @@ class MaterialLocalizationIs extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Leyfi';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Valmyndarstika';
 
   @override
   String get modalBarrierDismissLabel => 'Hunsa';
@@ -18488,7 +18680,7 @@ class MaterialLocalizationIt extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Licenze';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menu barra dei menu';
 
   @override
   String get modalBarrierDismissLabel => 'Ignora';
@@ -18930,7 +19122,7 @@ class MaterialLocalizationJa extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'ライセンス';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'メニューバーのメニュー';
 
   @override
   String get modalBarrierDismissLabel => '閉じる';
@@ -19372,7 +19564,7 @@ class MaterialLocalizationKa extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'ლიცენზიები';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'მენიუს ზოლის მენიუ';
 
   @override
   String get modalBarrierDismissLabel => 'დახურვა';
@@ -19814,7 +20006,7 @@ class MaterialLocalizationKk extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Лицензиялар';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Мәзір жолағының мәзірі';
 
   @override
   String get modalBarrierDismissLabel => 'Жабу';
@@ -20256,7 +20448,7 @@ class MaterialLocalizationKm extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'អាជ្ញាបណ្ណ';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'ម៉ឺនុយរបារម៉ឺនុយ';
 
   @override
   String get modalBarrierDismissLabel => 'ច្រាន​ចោល';
@@ -20698,7 +20890,7 @@ class MaterialLocalizationKn extends GlobalMaterialLocalizations {
   String get licensesPageTitle => '\u{caa}\u{cb0}\u{cb5}\u{cbe}\u{ca8}\u{c97}\u{cbf}\u{c97}\u{cb3}\u{cc1}';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => '\u{cae}\u{cc6}\u{ca8}\u{cc1}\u{20}\u{cac}\u{cbe}\u{cb0}\u{ccd}\u{200c}\u{20}\u{cae}\u{cc6}\u{ca8}\u{cc1}';
 
   @override
   String get modalBarrierDismissLabel => '\u{cb5}\u{c9c}\u{cbe}\u{c97}\u{cca}\u{cb3}\u{cbf}\u{cb8}\u{cbf}';
@@ -21140,7 +21332,7 @@ class MaterialLocalizationKo extends GlobalMaterialLocalizations {
   String get licensesPageTitle => '라이선스';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => '메뉴 바 메뉴';
 
   @override
   String get modalBarrierDismissLabel => '닫기';
@@ -21582,7 +21774,7 @@ class MaterialLocalizationKy extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Уруксаттамалар';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Меню тилкеси менюсу';
 
   @override
   String get modalBarrierDismissLabel => 'Жабуу';
@@ -22024,7 +22216,7 @@ class MaterialLocalizationLo extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'ໃບອະນຸຍາດ';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'ເມນູແຖບເມນູ';
 
   @override
   String get modalBarrierDismissLabel => 'ປິດໄວ້';
@@ -22466,7 +22658,7 @@ class MaterialLocalizationLt extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Licencijos';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Meniu juostos meniu';
 
   @override
   String get modalBarrierDismissLabel => 'Atsisakyti';
@@ -22908,7 +23100,7 @@ class MaterialLocalizationLv extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Licences';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Izvēļņu joslas izvēlne';
 
   @override
   String get modalBarrierDismissLabel => 'Nerādīt';
@@ -23350,7 +23542,7 @@ class MaterialLocalizationMk extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Лиценци';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Мени на лентата со мени';
 
   @override
   String get modalBarrierDismissLabel => 'Отфрли';
@@ -23792,7 +23984,7 @@ class MaterialLocalizationMl extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'ലൈസൻസുകൾ';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'മെനു ബാർ മെനു';
 
   @override
   String get modalBarrierDismissLabel => 'നിരസിക്കുക';
@@ -24234,7 +24426,7 @@ class MaterialLocalizationMn extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Лиценз';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Цэсний талбарын цэс';
 
   @override
   String get modalBarrierDismissLabel => 'Үл хэрэгсэх';
@@ -24676,7 +24868,7 @@ class MaterialLocalizationMr extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'परवाने';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'मेनू बार मेनू';
 
   @override
   String get modalBarrierDismissLabel => 'डिसमिस करा';
@@ -25560,7 +25752,7 @@ class MaterialLocalizationMy extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'လိုင်စင်များ';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'မီနူးဘား မီနူး';
 
   @override
   String get modalBarrierDismissLabel => 'ပယ်ရန်';
@@ -26002,7 +26194,7 @@ class MaterialLocalizationNb extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Lisenser';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Meny med menylinje';
 
   @override
   String get modalBarrierDismissLabel => 'Avvis';
@@ -26444,7 +26636,7 @@ class MaterialLocalizationNe extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'इजाजतपत्रहरू';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => '"मेनु बार" मेनु';
 
   @override
   String get modalBarrierDismissLabel => 'खारेज गर्नुहोस्';
@@ -26886,7 +27078,7 @@ class MaterialLocalizationNl extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Licenties';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menu van menubalk';
 
   @override
   String get modalBarrierDismissLabel => 'Sluiten';
@@ -27328,7 +27520,7 @@ class MaterialLocalizationNo extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Lisenser';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Meny med menylinje';
 
   @override
   String get modalBarrierDismissLabel => 'Avvis';
@@ -27770,7 +27962,7 @@ class MaterialLocalizationOr extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'ଲାଇସେନ୍ସଗୁଡ଼କ';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'ମେନୁ ବାର ମେନୁ';
 
   @override
   String get modalBarrierDismissLabel => 'ଖାରଜ କରନ୍ତୁ';
@@ -28212,7 +28404,7 @@ class MaterialLocalizationPa extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'ਲਾਇਸੰਸ';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'ਮੀਨੂ ਬਾਰ ਮੀਨੂ';
 
   @override
   String get modalBarrierDismissLabel => 'ਖਾਰਜ ਕਰੋ';
@@ -28654,7 +28846,7 @@ class MaterialLocalizationPl extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Licencje';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Pasek menu';
 
   @override
   String get modalBarrierDismissLabel => 'Zamknij';
@@ -29538,7 +29730,7 @@ class MaterialLocalizationPt extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Licenças';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menu da barra de menus';
 
   @override
   String get modalBarrierDismissLabel => 'Dispensar';
@@ -29714,6 +29906,9 @@ class MaterialLocalizationPtPt extends MaterialLocalizationPt {
     required super.decimalFormat,
     required super.twoDigitZeroPaddedFormat,
   });
+
+  @override
+  String get menuBarMenuLabel => 'Menu da barra de menu';
 
   @override
   String get keyboardKeyChannelDown => 'Canal anterior';
@@ -30116,7 +30311,7 @@ class MaterialLocalizationRo extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Licențe';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Bară de meniu';
 
   @override
   String get modalBarrierDismissLabel => 'Închideți';
@@ -30558,7 +30753,7 @@ class MaterialLocalizationRu extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Лицензии';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Строка меню';
 
   @override
   String get modalBarrierDismissLabel => 'Закрыть';
@@ -31000,7 +31195,7 @@ class MaterialLocalizationSi extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'බලපත්‍ර';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'මෙනු තීරු මෙනුව';
 
   @override
   String get modalBarrierDismissLabel => 'ඉවත ලන්න';
@@ -31442,7 +31637,7 @@ class MaterialLocalizationSk extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Licencie';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Ponuka panela s ponukami';
 
   @override
   String get modalBarrierDismissLabel => 'Odmietnuť';
@@ -31884,7 +32079,7 @@ class MaterialLocalizationSl extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Licence';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Meni menijske vrstice';
 
   @override
   String get modalBarrierDismissLabel => 'Opusti';
@@ -32326,7 +32521,7 @@ class MaterialLocalizationSq extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Licencat';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menyja e shiritit të menysë';
 
   @override
   String get modalBarrierDismissLabel => 'Hiq';
@@ -32768,7 +32963,7 @@ class MaterialLocalizationSr extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Лиценце';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Мени трака менија';
 
   @override
   String get modalBarrierDismissLabel => 'Одбаци';
@@ -33092,6 +33287,9 @@ class MaterialLocalizationSrLatn extends MaterialLocalizationSr {
 
   @override
   String get licensesPageTitle => 'Licence';
+
+  @override
+  String get menuBarMenuLabel => 'Meni traka menija';
 
   @override
   String get modalBarrierDismissLabel => 'Odbaci';
@@ -33509,7 +33707,7 @@ class MaterialLocalizationSv extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Licenser';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menyrad';
 
   @override
   String get modalBarrierDismissLabel => 'Stäng';
@@ -33951,7 +34149,7 @@ class MaterialLocalizationSw extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Leseni';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menyu ya upau wa menyu';
 
   @override
   String get modalBarrierDismissLabel => 'Ondoa';
@@ -34135,7 +34333,7 @@ class MaterialLocalizationTa extends GlobalMaterialLocalizations {
   String get alertDialogLabel => 'விழிப்பூட்டல்';
 
   @override
-  String get anteMeridiemAbbreviation => 'AM';
+  String get anteMeridiemAbbreviation => 'முற்பகல்';
 
   @override
   String get backButtonTooltip => 'முந்தைய பக்கம்';
@@ -34393,7 +34591,7 @@ class MaterialLocalizationTa extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'உரிமங்கள்';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'மெனு பட்டியின் மெனு';
 
   @override
   String get modalBarrierDismissLabel => 'நிராகரிக்கும்';
@@ -34426,7 +34624,7 @@ class MaterialLocalizationTa extends GlobalMaterialLocalizations {
   String get popupMenuLabel => 'பாப்-அப் மெனு';
 
   @override
-  String get postMeridiemAbbreviation => 'PM';
+  String get postMeridiemAbbreviation => 'பிற்பகல்';
 
   @override
   String get previousMonthTooltip => 'முந்தைய மாதம்';
@@ -34835,7 +35033,7 @@ class MaterialLocalizationTe extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'లైసెన్స్‌లు';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'మెనూ బార్ మెనూ';
 
   @override
   String get modalBarrierDismissLabel => 'విస్మరించు';
@@ -35277,7 +35475,7 @@ class MaterialLocalizationTh extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'ใบอนุญาต';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'เมนูในแถบเมนู';
 
   @override
   String get modalBarrierDismissLabel => 'ปิด';
@@ -35719,7 +35917,7 @@ class MaterialLocalizationTl extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Mga Lisensya';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menu sa menu bar';
 
   @override
   String get modalBarrierDismissLabel => 'I-dismiss';
@@ -36161,7 +36359,7 @@ class MaterialLocalizationTr extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Lisanslar';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menü çubuğu menüsü';
 
   @override
   String get modalBarrierDismissLabel => 'Kapat';
@@ -36603,7 +36801,7 @@ class MaterialLocalizationUk extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Ліцензії';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Панель меню';
 
   @override
   String get modalBarrierDismissLabel => 'Закрити';
@@ -37045,7 +37243,7 @@ class MaterialLocalizationUr extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'لائسنسز';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'مینو بار کا مینو';
 
   @override
   String get modalBarrierDismissLabel => 'برخاست کریں';
@@ -37487,7 +37685,7 @@ class MaterialLocalizationUz extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Litsenziyalar';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Menyu paneli';
 
   @override
   String get modalBarrierDismissLabel => 'Yopish';
@@ -37929,7 +38127,7 @@ class MaterialLocalizationVi extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Giấy phép';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Trình đơn của thanh trình đơn';
 
   @override
   String get modalBarrierDismissLabel => 'Bỏ qua';
@@ -38371,7 +38569,7 @@ class MaterialLocalizationZh extends GlobalMaterialLocalizations {
   String get licensesPageTitle => '许可';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => '菜单栏的菜单';
 
   @override
   String get modalBarrierDismissLabel => '关闭';
@@ -38758,6 +38956,9 @@ class MaterialLocalizationZhHant extends MaterialLocalizationZh {
 
   @override
   String get licensesPageTitle => '授權';
+
+  @override
+  String get menuBarMenuLabel => '選單列選單';
 
   @override
   String get modalBarrierDismissLabel => '拒絕';
@@ -39273,7 +39474,7 @@ class MaterialLocalizationZu extends GlobalMaterialLocalizations {
   String get licensesPageTitle => 'Amalayisense';
 
   @override
-  String get menuBarMenuLabel => 'Menu bar menu';
+  String get menuBarMenuLabel => 'Imenyu yebha yemenyu';
 
   @override
   String get modalBarrierDismissLabel => 'Cashisa';

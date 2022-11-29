@@ -1279,7 +1279,7 @@ void main() {
     await tester.pumpWidget(buildFrame(splashFactory: NoSplash.splashFactory));
     {
       final TestGesture gesture = await tester.startGesture(tester.getCenter(find.text('test')));
-      final MaterialInkController material = Material.of(tester.element(find.text('test')))!;
+      final MaterialInkController material = Material.of(tester.element(find.text('test')));
       await tester.pump(const Duration(milliseconds: 200));
       expect(material, paintsExactlyCountTimes(#drawCircle, 0));
       await gesture.up();
@@ -1290,7 +1290,7 @@ void main() {
     await tester.pumpWidget(buildFrame(splashFactory: InkRipple.splashFactory));
     {
       final TestGesture gesture = await tester.startGesture(tester.getCenter(find.text('test')));
-      final MaterialInkController material = Material.of(tester.element(find.text('test')))!;
+      final MaterialInkController material = Material.of(tester.element(find.text('test')));
       await tester.pump(const Duration(milliseconds: 200));
       expect(material, paintsExactlyCountTimes(#drawCircle, 1));
       await gesture.up();
@@ -1600,7 +1600,31 @@ void main() {
     );
   });
 
-  testWidgets('ElevatedButton statesController', (WidgetTester tester) async {
+  testWidgets('ElevatedButton.styleFrom can be used to set foreground and background colors', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: Colors.purple,
+            ),
+            onPressed: () {},
+            child: const Text('button'),
+          ),
+        ),
+      ),
+    );
+
+    final Material material = tester.widget<Material>(find.descendant(
+      of: find.byType(ElevatedButton),
+      matching: find.byType(Material),
+    ));
+    expect(material.color, Colors.purple);
+    expect(material.textStyle!.color, Colors.white);
+  });
+
+  Future<void> testStatesController(Widget? icon, WidgetTester tester) async {
     int count = 0;
     void valueChanged() {
       count += 1;
@@ -1611,11 +1635,18 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Center(
-          child: ElevatedButton(
-            statesController: controller,
-            onPressed: () { },
-            child: const Text('button'),
-          ),
+          child: icon == null
+            ? ElevatedButton(
+                statesController: controller,
+                onPressed: () { },
+                child: const Text('button'),
+              )
+            : ElevatedButton.icon(
+                statesController: controller,
+                onPressed: () { },
+                icon: icon,
+                label: const Text('button'),
+              ),
         ),
       ),
     );
@@ -1623,7 +1654,7 @@ void main() {
     expect(controller.value, <MaterialState>{});
     expect(count, 0);
 
-    final Offset center = tester.getCenter(find.byType(ElevatedButton));
+    final Offset center = tester.getCenter(find.byType(Text));
     final TestGesture gesture = await tester.createGesture(
       kind: PointerDeviceKind.mouse,
     );
@@ -1674,11 +1705,18 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Center(
-          child: ElevatedButton(
-            statesController: controller,
-            onPressed: null,
-            child: const Text('button'),
-          ),
+        child: icon == null
+          ? ElevatedButton(
+              statesController: controller,
+              onPressed: null,
+              child: const Text('button'),
+            )
+          : ElevatedButton.icon(
+              statesController: controller,
+              onPressed: null,
+              icon: icon,
+              label: const Text('button'),
+            ),
         ),
       ),
     );
@@ -1690,6 +1728,14 @@ void main() {
     expect(controller.value, <MaterialState>{MaterialState.disabled});
     expect(count, 11);
     await gesture.removePointer();
+  }
+
+  testWidgets('ElevatedButton statesController', (WidgetTester tester) async {
+    testStatesController(null, tester);
+  });
+
+  testWidgets('ElevatedButton.icon statesController', (WidgetTester tester) async {
+    testStatesController(const Icon(Icons.add), tester);
   });
 
   testWidgets('Disabled ElevatedButton statesController', (WidgetTester tester) async {

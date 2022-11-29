@@ -98,7 +98,7 @@ class Tab extends StatelessWidget implements PreferredSizeWidget {
 
   /// The height of the [Tab].
   ///
-  /// If null, the height will be calculated based on the content of the [Tab].  When `icon` is not
+  /// If null, the height will be calculated based on the content of the [Tab]. When `icon` is not
   /// null along with `child` or `text`, the default height is 72.0 pixels. Without an `icon`, the
   /// height is 46.0 pixels.
   final double? height;
@@ -189,12 +189,12 @@ class _TabStyle extends AnimatedWidget {
     // the same value of inherit. Force that to be inherit=true here.
     final TextStyle defaultStyle = (labelStyle
       ?? tabBarTheme.labelStyle
-      ?? themeData.primaryTextTheme.bodyText1!
+      ?? themeData.primaryTextTheme.bodyLarge!
     ).copyWith(inherit: true);
     final TextStyle defaultUnselectedStyle = (unselectedLabelStyle
       ?? tabBarTheme.unselectedLabelStyle
       ?? labelStyle
-      ?? themeData.primaryTextTheme.bodyText1!
+      ?? themeData.primaryTextTheme.bodyLarge!
     ).copyWith(inherit: true);
     final TextStyle textStyle = selected
       ? TextStyle.lerp(defaultStyle, defaultUnselectedStyle, animation.value)!
@@ -202,7 +202,7 @@ class _TabStyle extends AnimatedWidget {
 
     final Color selectedColor = labelColor
        ?? tabBarTheme.labelColor
-       ?? themeData.primaryTextTheme.bodyText1!.color!;
+       ?? themeData.primaryTextTheme.bodyLarge!.color!;
     final Color unselectedColor = unselectedLabelColor
       ?? tabBarTheme.unselectedLabelColor
       ?? selectedColor.withAlpha(0xB2); // 70% alpha
@@ -519,25 +519,34 @@ class _TabBarScrollPosition extends ScrollPositionWithSingleContext {
 
   final _TabBarState tabBar;
 
-  bool? _initialViewportDimensionWasZero;
+  bool _viewportDimensionWasNonZero = false;
+
+  // Position should be adjusted at least once.
+  bool _needsPixelsCorrection = true;
 
   @override
   bool applyContentDimensions(double minScrollExtent, double maxScrollExtent) {
     bool result = true;
-    if (_initialViewportDimensionWasZero != true) {
-      // If the viewport never had a non-zero dimension, we just want to jump
-      // to the initial scroll position to avoid strange scrolling effects in
-      // release mode: In release mode, the viewport temporarily may have a
-      // dimension of zero before the actual dimension is calculated. In that
-      // scenario, setting the actual dimension would cause a strange scroll
-      // effect without this guard because the super call below would starts a
-      // ballistic scroll activity.
-      assert(viewportDimension != null);
-      _initialViewportDimensionWasZero = viewportDimension != 0.0;
+    if (!_viewportDimensionWasNonZero) {
+      _viewportDimensionWasNonZero = viewportDimension != 0.0;
+    }
+    // If the viewport never had a non-zero dimension, we just want to jump
+    // to the initial scroll position to avoid strange scrolling effects in
+    // release mode: In release mode, the viewport temporarily may have a
+    // dimension of zero before the actual dimension is calculated. In that
+    // scenario, setting the actual dimension would cause a strange scroll
+    // effect without this guard because the super call below would starts a
+    // ballistic scroll activity.
+    if (!_viewportDimensionWasNonZero || _needsPixelsCorrection) {
+      _needsPixelsCorrection = false;
       correctPixels(tabBar._initialScrollOffset(viewportDimension, minScrollExtent, maxScrollExtent));
       result = false;
     }
     return super.applyContentDimensions(minScrollExtent, maxScrollExtent) && result;
+  }
+
+  void markNeedsPixelsCorrection() {
+    _needsPixelsCorrection = true;
   }
 }
 
@@ -741,7 +750,7 @@ class TabBar extends StatefulWidget implements PreferredSizeWidget {
   /// opacity unless [unselectedLabelColor] is non-null.
   ///
   /// If this parameter is null, then the color of the [ThemeData.primaryTextTheme]'s
-  /// bodyText1 text color is used.
+  /// [TextTheme.bodyLarge] text color is used.
   final Color? labelColor;
 
   /// The color of unselected tab labels.
@@ -756,7 +765,7 @@ class TabBar extends StatefulWidget implements PreferredSizeWidget {
   /// both selected and unselected label styles.
   ///
   /// If this property is null, then the text style of the
-  /// [ThemeData.primaryTextTheme]'s bodyText1 definition is used.
+  /// [ThemeData.primaryTextTheme]'s [TextTheme.bodyLarge] definition is used.
   final TextStyle? labelStyle;
 
   /// The padding added to each of the tab labels.
@@ -772,7 +781,7 @@ class TabBar extends StatefulWidget implements PreferredSizeWidget {
   ///
   /// If this property is null, then the [labelStyle] value is used. If [labelStyle]
   /// is null, then the text style of the [ThemeData.primaryTextTheme]'s
-  /// bodyText1 definition is used.
+  /// [TextTheme.bodyLarge] definition is used.
   final TextStyle? unselectedLabelStyle;
 
   /// Defines the ink response focus, hover, and splash colors.
@@ -843,6 +852,7 @@ class TabBar extends StatefulWidget implements PreferredSizeWidget {
   /// Use [NoSplash.splashFactory] to defeat ink splash rendering. For example
   /// to defeat both the splash and the hover/pressed overlay, but not the
   /// keyboard focused overlay:
+  ///
   /// ```dart
   /// TabBar(
   ///   splashFactory: NoSplash.splashFactory,
@@ -851,7 +861,9 @@ class TabBar extends StatefulWidget implements PreferredSizeWidget {
   ///       return states.contains(MaterialState.focused) ? null : Colors.transparent;
   ///     },
   ///   ),
-  ///   ...
+  ///   tabs: const <Widget>[
+  ///     // ...
+  ///   ],
   /// )
   /// ```
   final InteractiveInkFeatureFactory? splashFactory;
@@ -859,13 +871,16 @@ class TabBar extends StatefulWidget implements PreferredSizeWidget {
   /// Defines the clipping radius of splashes that extend outside the bounds of the tab.
   ///
   /// This can be useful to match the [BoxDecoration.borderRadius] provided as [indicator].
+  ///
   /// ```dart
   /// TabBar(
   ///   indicator: BoxDecoration(
   ///     borderRadius: BorderRadius.circular(40),
   ///   ),
   ///   splashBorderRadius: BorderRadius.circular(40),
-  ///   ...
+  ///   tabs: const <Widget>[
+  ///     // ...
+  ///   ],
   /// )
   /// ```
   ///
@@ -948,7 +963,7 @@ class _TabBarState extends State<TabBar> {
     // TODO(xu-baolin): Remove automatic adjustment to white color indicator
     // with a better long-term solution.
     // https://github.com/flutter/flutter/pull/68171#pullrequestreview-517753917
-    if (widget.automaticIndicatorColorAdjustment && color.value == Material.of(context)?.color?.value) {
+    if (widget.automaticIndicatorColorAdjustment && color.value == Material.maybeOf(context)?.color?.value) {
       color = Colors.white;
     }
 
@@ -966,7 +981,7 @@ class _TabBarState extends State<TabBar> {
   bool get _controllerIsValid => _controller?.animation != null;
 
   void _updateTabController() {
-    final TabController? newController = widget.controller ?? DefaultTabController.of(context);
+    final TabController? newController = widget.controller ?? DefaultTabController.maybeOf(context);
     assert(() {
       if (newController == null) {
         throw FlutterError(
@@ -1021,9 +1036,17 @@ class _TabBarState extends State<TabBar> {
     if (widget.controller != oldWidget.controller) {
       _updateTabController();
       _initIndicatorPainter();
+      // Adjust scroll position.
+      if (_scrollController != null) {
+        final ScrollPosition position = _scrollController!.position;
+        if (position is _TabBarScrollPosition) {
+          position.markNeedsPixelsCorrection();
+        }
+      }
     } else if (widget.indicatorColor != oldWidget.indicatorColor ||
         widget.indicatorWeight != oldWidget.indicatorWeight ||
         widget.indicatorSize != oldWidget.indicatorSize ||
+        widget.indicatorPadding != oldWidget.indicatorPadding ||
         widget.indicator != oldWidget.indicator) {
       _initIndicatorPainter();
     }
@@ -1055,14 +1078,18 @@ class _TabBarState extends State<TabBar> {
       return 0.0;
     }
     double tabCenter = _indicatorPainter!.centerOf(index);
+    double paddingStart;
     switch (Directionality.of(context)) {
       case TextDirection.rtl:
+        paddingStart = widget.padding?.resolve(TextDirection.rtl).right ?? 0;
         tabCenter = _tabStripWidth - tabCenter;
         break;
       case TextDirection.ltr:
+        paddingStart = widget.padding?.resolve(TextDirection.ltr).left ?? 0;
         break;
     }
-    return clampDouble(tabCenter - viewportWidth / 2.0, minExtent, maxExtent);
+
+    return clampDouble(tabCenter + paddingStart - viewportWidth / 2.0, minExtent, maxExtent);
   }
 
   double _tabCenteredScrollOffset(int index) {
@@ -1400,7 +1427,7 @@ class _TabBarViewState extends State<TabBarView> {
   bool get _controllerIsValid => _controller?.animation != null;
 
   void _updateTabController() {
-    final TabController? newController = widget.controller ?? DefaultTabController.of(context);
+    final TabController? newController = widget.controller ?? DefaultTabController.maybeOf(context);
     assert(() {
       if (newController == null) {
         throw FlutterError(
@@ -1495,18 +1522,20 @@ class _TabBarViewState extends State<TabBarView> {
     }
 
     final Duration duration = _controller!.animationDuration;
-
-    if (duration == Duration.zero) {
-      _pageController.jumpToPage(_currentIndex!);
-      return Future<void>.value();
-    }
-
     final int previousIndex = _controller!.previousIndex;
 
     if ((_currentIndex! - previousIndex).abs() == 1) {
+      if (duration == Duration.zero) {
+        _pageController.jumpToPage(_currentIndex!);
+        return Future<void>.value();
+      }
       _warpUnderwayCount += 1;
       await _pageController.animateToPage(_currentIndex!, duration: duration, curve: Curves.ease);
       _warpUnderwayCount -= 1;
+
+      if (mounted && widget.children != _children) {
+        setState(() { _updateChildren(); });
+      }
       return Future<void>.value();
     }
 
@@ -1525,10 +1554,16 @@ class _TabBarViewState extends State<TabBarView> {
     });
     _pageController.jumpToPage(initialPage);
 
-    await _pageController.animateToPage(_currentIndex!, duration: duration, curve: Curves.ease);
-    if (!mounted) {
-      return Future<void>.value();
+    if (duration == Duration.zero) {
+      _pageController.jumpToPage(_currentIndex!);
+    } else {
+      await _pageController.animateToPage(_currentIndex!, duration: duration, curve: Curves.ease);
+
+      if (!mounted) {
+        return Future<void>.value();
+      }
     }
+
     setState(() {
       _warpUnderwayCount -= 1;
       if (widget.children != _children) {
@@ -1749,7 +1784,7 @@ class TabPageSelector extends StatelessWidget {
     final Color fixSelectedColor = selectedColor ?? Theme.of(context).colorScheme.secondary;
     final ColorTween selectedColorTween = ColorTween(begin: fixColor, end: fixSelectedColor);
     final ColorTween previousColorTween = ColorTween(begin: fixSelectedColor, end: fixColor);
-    final TabController? tabController = controller ?? DefaultTabController.of(context);
+    final TabController? tabController = controller ?? DefaultTabController.maybeOf(context);
 	  final MaterialLocalizations localizations = MaterialLocalizations.of(context);
     assert(() {
       if (tabController == null) {

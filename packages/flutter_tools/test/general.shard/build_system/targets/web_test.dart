@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.8
-
 import 'package:file_testing/file_testing.dart';
 import 'package:flutter_tools/src/artifacts.dart';
 import 'package:flutter_tools/src/base/file_system.dart';
@@ -30,9 +28,9 @@ const List<String> kDart2jsLinuxArgs = <String>[
 ];
 
 void main() {
-  Testbed testbed;
-  Environment environment;
-  FakeProcessManager processManager;
+  late Testbed testbed;
+  late Environment environment;
+  late FakeProcessManager processManager;
   final Platform linux = FakePlatform(
     environment: <String, String>{},
   );
@@ -40,7 +38,7 @@ void main() {
     operatingSystem: 'windows',
     environment: <String, String>{},
   );
-  DepfileService depfileService;
+  late DepfileService depfileService;
 
   setUp(() {
     testbed = Testbed(setup: () {
@@ -339,7 +337,7 @@ void main() {
         '--no-source-maps',
         '-o',
         environment.buildDir.childFile('app.dill').absolute.path,
-        '--packages=.packages',
+        '--packages=.dart_tool/package_config.json',
         '--cfe-only',
         environment.buildDir.childFile('main.dart').absolute.path,
       ]
@@ -375,7 +373,7 @@ void main() {
         '--no-source-maps',
         '-o',
         environment.buildDir.childFile('app.dill').absolute.path,
-        '--packages=.packages',
+        '--packages=.dart_tool/package_config.json',
         '--cfe-only',
         environment.buildDir.childFile('main.dart').absolute.path,
       ]
@@ -408,7 +406,7 @@ void main() {
         '--no-source-maps',
         '-o',
         environment.buildDir.childFile('app.dill').absolute.path,
-        '--packages=.packages',
+        '--packages=.dart_tool/package_config.json',
         '--cfe-only',
         environment.buildDir.childFile('main.dart').absolute.path,
       ]
@@ -440,7 +438,7 @@ void main() {
         '--no-source-maps',
         '-o',
         environment.buildDir.childFile('app.dill').absolute.path,
-        '--packages=.packages',
+        '--packages=.dart_tool/package_config.json',
         '--cfe-only',
         environment.buildDir.childFile('main.dart').absolute.path,
       ]
@@ -473,7 +471,7 @@ void main() {
         '--no-source-maps',
         '-o',
         environment.buildDir.childFile('app.dill').absolute.path,
-        '--packages=.packages',
+        '--packages=.dart_tool/package_config.json',
         '--cfe-only',
         environment.buildDir.childFile('main.dart').absolute.path,
       ]
@@ -506,7 +504,7 @@ void main() {
         '--no-source-maps',
         '-o',
         environment.buildDir.childFile('app.dill').absolute.path,
-        '--packages=.packages',
+        '--packages=.dart_tool/package_config.json',
         '--cfe-only',
         environment.buildDir.childFile('main.dart').absolute.path,
       ]
@@ -537,7 +535,7 @@ void main() {
         '--no-source-maps',
         '-o',
         environment.buildDir.childFile('app.dill').absolute.path,
-        '--packages=.packages',
+        '--packages=.dart_tool/package_config.json',
         '--cfe-only',
         environment.buildDir.childFile('main.dart').absolute.path,
       ], onRun: () {
@@ -569,7 +567,7 @@ void main() {
         '--no-source-maps',
         '-o',
         environment.buildDir.childFile('app.dill').absolute.path,
-        '--packages=.packages',
+        '--packages=.dart_tool/package_config.json',
        '--cfe-only',
         environment.buildDir.childFile('main.dart').absolute.path,
       ]
@@ -602,7 +600,7 @@ void main() {
         '-Ddart.vm.product=true',
         '-o',
         environment.buildDir.childFile('app.dill').absolute.path,
-        '--packages=.packages',
+        '--packages=.dart_tool/package_config.json',
        '--cfe-only',
         environment.buildDir.childFile('main.dart').absolute.path,
       ]
@@ -636,7 +634,7 @@ void main() {
         '--no-source-maps',
         '-o',
         environment.buildDir.childFile('app.dill').absolute.path,
-        '--packages=.packages',
+        '--packages=.dart_tool/package_config.json',
         '--cfe-only',
         environment.buildDir.childFile('main.dart').absolute.path,
       ]
@@ -650,6 +648,74 @@ void main() {
         '--no-source-maps',
         '-O4',
         '--no-minify',
+        '-o',
+        environment.buildDir.childFile('main.dart.js').absolute.path,
+        environment.buildDir.childFile('app.dill').absolute.path,
+      ]
+    ));
+
+    await const Dart2JSTarget().build(environment);
+  }, overrides: <Type, Generator>{
+    ProcessManager: () => processManager,
+  }));
+
+  test('Dart2JSTarget calls dart2js with expected args with dump-info', () => testbed.run(() async {
+    environment.defines[kBuildMode] = 'profile';
+    environment.defines[kDart2jsDumpInfo] = 'true';
+    processManager.addCommand(FakeCommand(
+      command: <String>[
+        ...kDart2jsLinuxArgs,
+        '-Ddart.vm.profile=true',
+        '--no-source-maps',
+        '-o',
+        environment.buildDir.childFile('app.dill').absolute.path,
+        '--packages=.dart_tool/package_config.json',
+        '--cfe-only',
+        environment.buildDir.childFile('main.dart').absolute.path,
+      ]
+    ));
+    processManager.addCommand(FakeCommand(
+      command: <String>[
+        ...kDart2jsLinuxArgs,
+        '-Ddart.vm.profile=true',
+        '--no-source-maps',
+        '-O4',
+        '--no-minify',
+        '--dump-info',
+        '-o',
+        environment.buildDir.childFile('main.dart.js').absolute.path,
+        environment.buildDir.childFile('app.dill').absolute.path,
+      ]
+    ));
+
+    await const Dart2JSTarget().build(environment);
+  }, overrides: <Type, Generator>{
+    ProcessManager: () => processManager,
+  }));
+
+  test('Dart2JSTarget calls dart2js with expected args with no-frequency-based-minification', () => testbed.run(() async {
+    environment.defines[kBuildMode] = 'profile';
+    environment.defines[kDart2jsNoFrequencyBasedMinification] = 'true';
+    processManager.addCommand(FakeCommand(
+      command: <String>[
+        ...kDart2jsLinuxArgs,
+        '-Ddart.vm.profile=true',
+        '--no-source-maps',
+        '-o',
+        environment.buildDir.childFile('app.dill').absolute.path,
+        '--packages=.dart_tool/package_config.json',
+        '--cfe-only',
+        environment.buildDir.childFile('main.dart').absolute.path,
+      ]
+    ));
+    processManager.addCommand(FakeCommand(
+      command: <String>[
+        ...kDart2jsLinuxArgs,
+        '-Ddart.vm.profile=true',
+        '--no-source-maps',
+        '-O4',
+        '--no-minify',
+        '--no-frequency-based-minification',
         '-o',
         environment.buildDir.childFile('main.dart.js').absolute.path,
         environment.buildDir.childFile('app.dill').absolute.path,
