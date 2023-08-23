@@ -69,24 +69,25 @@ class TestRecordingCanvas implements Canvas {
   @override
   void save() {
     _saveCount += 1;
-    invocations.add(RecordedInvocation(_MethodCall(#save), stack: StackTrace.current));
+    invocations.add(RecordedInvocation(Invocation.method(#save), stack: StackTrace.current));
   }
 
   @override
   void saveLayer(Rect? bounds, Paint paint) {
     _saveCount += 1;
-    invocations.add(RecordedInvocation(_MethodCall(#saveLayer, <dynamic>[bounds, paint]), stack: StackTrace.current));
+    invocations.add(RecordedInvocation(Invocation.method(#saveLayer, <dynamic>[bounds, paint]), stack: StackTrace.current));
   }
 
   @override
   void restore() {
     _saveCount -= 1;
     assert(_saveCount >= 0);
-    invocations.add(RecordedInvocation(_MethodCall(#restore), stack: StackTrace.current));
+    invocations.add(RecordedInvocation(Invocation.method(#restore), stack: StackTrace.current));
   }
 
   @override
   void noSuchMethod(Invocation invocation) {
+    assert(_symbolNames.containsKey(invocation.memberName));
     invocations.add(RecordedInvocation(invocation, stack: StackTrace.current));
   }
 }
@@ -190,28 +191,6 @@ class TestRecordingPaintingContext extends ClipContext implements PaintingContex
   void noSuchMethod(Invocation invocation) { }
 }
 
-class _MethodCall implements Invocation {
-  _MethodCall(this._name, [ this._arguments = const <dynamic>[]]);
-  final Symbol _name;
-  final List<dynamic> _arguments;
-  @override
-  bool get isAccessor => false;
-  @override
-  bool get isGetter => false;
-  @override
-  bool get isMethod => true;
-  @override
-  bool get isSetter => false;
-  @override
-  Symbol get memberName => _name;
-  @override
-  Map<Symbol, dynamic> get namedArguments => <Symbol, dynamic>{};
-  @override
-  List<dynamic> get positionalArguments => _arguments;
-  @override
-  List<Type> get typeArguments => const <Type> [];
-}
-
 String _valueName(Object? value) {
   if (value is double) {
     return value.toStringAsFixed(1);
@@ -219,15 +198,9 @@ String _valueName(Object? value) {
   return value.toString();
 }
 
-// Workaround for https://github.com/dart-lang/sdk/issues/28372
-String _symbolName(Symbol symbol) {
-  // WARNING: Assumes a fixed format for Symbol.toString which is *not*
-  // guaranteed anywhere.
-  final String s = '$symbol';
-  return s.substring(8, s.length - 2);
-}
+String _symbolName(Symbol symbol) => _symbolNames[symbol] ??
+    throw UnsupportedError('Only members of Canvas supported');
 
-// Workaround for https://github.com/dart-lang/sdk/issues/28373
 String _describeInvocation(Invocation call) {
   final StringBuffer buffer = StringBuffer();
   buffer.write(_symbolName(call.memberName));
@@ -248,3 +221,47 @@ String _describeInvocation(Invocation call) {
   }
   return buffer.toString();
 }
+
+const _symbolNames = {
+  #clipOp: 'clipOp',
+  #clipPath: 'clipPath',
+  #clipRRect: 'clipRRect',
+  #clipRect: 'clipRect',
+  #doAntiAlias: 'doAntiAlias',
+  #drawArc: 'drawArc',
+  #drawAtlas: 'drawAtlas',
+  #drawCircle: 'drawCircle',
+  #drawColor: 'drawColor',
+  #drawDRRect: 'drawDRRect',
+  #drawImage: 'drawImage',
+  #drawImageNine: 'drawImageNine',
+  #drawImageRect: 'drawImageRect',
+  #drawLine: 'drawLine',
+  #drawOval: 'drawOval',
+  #drawPaint: 'drawPaint',
+  #drawParagraph: 'drawParagraph',
+  #drawPath: 'drawPath',
+  #drawPicture: 'drawPicture',
+  #drawPoints: 'drawPoints',
+  #drawRRect: 'drawRRect',
+  #drawRawAtlas: 'drawRawAtlas',
+  #drawRawPoints: 'drawRawPoints',
+  #drawRect: 'drawRect',
+  #drawShadow: 'drawShadow',
+  #drawVertices: 'drawVertices',
+  #getDestinationClipBounds: 'getDestinationClipBounds',
+  #getLocalClipBounds: 'getLocalClipBounds',
+  #getSaveCount: 'getSaveCount',
+  #getTransform: 'getTransform',
+  #intersect: 'intersect',
+  #restore: 'restore',
+  #restoreToCount: 'restoreToCount',
+  #rotate: 'rotate',
+  #rue: 'rue',
+  #save: 'save',
+  #saveLayer: 'saveLayer',
+  #scale: 'scale',
+  #skew: 'skew',
+  #transform: 'transform',
+  #translate: 'translate',
+};
