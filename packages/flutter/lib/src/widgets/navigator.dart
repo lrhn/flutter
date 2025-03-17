@@ -869,21 +869,19 @@ class HeroControllerScope extends InheritedWidget {
   ///   returns null if no [HeroControllerScope] ancestor is found.
   static HeroController of(BuildContext context) {
     final HeroController? controller = maybeOf(context);
-    assert(() {
-      if (controller == null) {
-        throw FlutterError(
-          'HeroControllerScope.of() was called with a context that does not contain a '
-          'HeroControllerScope widget.\n'
-          'No HeroControllerScope widget ancestor could be found starting from the '
-          'context that was passed to HeroControllerScope.of(). This can happen '
-          'because you are using a widget that looks for a HeroControllerScope '
-          'ancestor, but no such ancestor exists.\n'
-          'The context used was:\n'
-          '  $context',
-        );
-      }
-      return true;
-    }());
+    assert(
+      controller != null,
+      throw FlutterError(
+        'HeroControllerScope.of() was called with a context that does not contain a '
+        'HeroControllerScope widget.\n'
+        'No HeroControllerScope widget ancestor could be found starting from the '
+        'context that was passed to HeroControllerScope.of(). This can happen '
+        'because you are using a widget that looks for a HeroControllerScope '
+        'ancestor, but no such ancestor exists.\n'
+        'The context used was:\n'
+        '  $context',
+      ),
+    );
     return controller!;
   }
 
@@ -2906,16 +2904,14 @@ class Navigator extends StatefulWidget {
             ? context.findRootAncestorStateOfType<NavigatorState>() ?? navigator
             : navigator ?? context.findAncestorStateOfType<NavigatorState>();
 
-    assert(() {
-      if (navigator == null) {
-        throw FlutterError(
-          'Navigator operation requested with a context that does not include a Navigator.\n'
-          'The context used to push or pop routes from the Navigator must be that of a '
-          'widget that is a descendant of a Navigator widget.',
-        );
-      }
-      return true;
-    }());
+    assert(
+      navigator != null,
+      throw FlutterError(
+        'Navigator operation requested with a context that does not include a Navigator.\n'
+        'The context used to push or pop routes from the Navigator must be that of a '
+        'widget that is a descendant of a Navigator widget.',
+      ),
+    );
     return navigator!;
   }
 
@@ -3597,7 +3593,7 @@ class _NavigatorReplaceObservation extends _NavigatorObservation {
   }
 }
 
-typedef _IndexWhereCallback = bool Function(_RouteEntry element);
+typedef _RouteEntryPredicate = bool Function(_RouteEntry element);
 
 /// A collection of _RouteEntries representing a navigation history.
 ///
@@ -3613,8 +3609,24 @@ class _History extends Iterable<_RouteEntry> with ChangeNotifier {
 
   final List<_RouteEntry> _value = <_RouteEntry>[];
 
-  int indexWhere(_IndexWhereCallback test, [int start = 0]) {
+  // More efficient implementations of some operations than a plain [Iterable].
+  // Can be more efficient when backed by a list.
+  // Add more if they are *used* (for example `last`).
+
+  int get length => _value.length;
+
+  bool get isEmpty => _value.isEmpty;
+
+  _RouteEntry lastWhere(_RouteEntryPredicate test) {
+    return _value.lastWhere(test);
+  }
+
+  int indexWhere(_RouteEntryPredicate test, [int start = 0]) {
     return _value.indexWhere(test, start);
+  }
+
+  int lastIndexWhere(_RouteEntryPredicate test, [int? start]) {
+    return _value.lastIndexWhere(test, start ?? (_value.length - 1));
   }
 
   void add(_RouteEntry element) {
@@ -3623,16 +3635,16 @@ class _History extends Iterable<_RouteEntry> with ChangeNotifier {
   }
 
   void addAll(Iterable<_RouteEntry> elements) {
+    final int lengthBefore = _value.length;
     _value.addAll(elements);
-    if (elements.isNotEmpty) {
+    if (lengthBefore != _value.length) {
       notifyListeners();
     }
   }
 
   void clear() {
-    final bool valueWasEmpty = _value.isEmpty;
-    _value.clear();
-    if (!valueWasEmpty) {
+    if (!_value.isEmpty) {
+      _value.clear();
       notifyListeners();
     }
   }
@@ -3788,7 +3800,7 @@ class NavigatorState extends State<Navigator> with TickerProviderStateMixin, Res
 
   // Record the last focused node in route entry.
   void _recordLastFocus() {
-    final _RouteEntry? entry = _history.where(_RouteEntry.isPresentPredicate).lastOrNull;
+    final _RouteEntry? entry = _lastRouteEntryWhereOrNull(_RouteEntry.isPresentPredicate);
     entry?.lastFocusNode = ServicesBinding.instance.accessibilityFocus.value;
   }
 
@@ -4084,7 +4096,7 @@ class NavigatorState extends State<Navigator> with TickerProviderStateMixin, Res
   /// The overlay this navigator uses for its visual presentation.
   OverlayState? get overlay => _overlayKey.currentState;
 
-  Iterable<OverlayEntry> get _allRouteOverlayEntries {
+  List<OverlayEntry> get _allRouteOverlayEntries {
     return <OverlayEntry>[for (final _RouteEntry entry in _history) ...entry.route.overlayEntries];
   }
 
@@ -4199,7 +4211,7 @@ class NavigatorState extends State<Navigator> with TickerProviderStateMixin, Res
       if (unattachedPagelessRoutes.isNotEmpty) {
         pageRouteToPagelessRoutes.putIfAbsent(
           oldEntry,
-          () => List<_RouteEntry>.from(unattachedPagelessRoutes),
+          () => List<_RouteEntry>.of(unattachedPagelessRoutes),
         );
         unattachedPagelessRoutes.clear();
       }
@@ -4612,10 +4624,7 @@ class NavigatorState extends State<Navigator> with TickerProviderStateMixin, Res
   }
 
   int _getIndexBefore(int index, _RouteEntryPredicate predicate) {
-    while (index >= 0 && !predicate(_history[index])) {
-      index -= 1;
-    }
-    return index;
+    return history.lastIndexWhere(predicate, index);
   }
 
   _RouteEntry? _getRouteAfter(int index, _RouteEntryPredicate predicate) {
@@ -4646,42 +4655,38 @@ class NavigatorState extends State<Navigator> with TickerProviderStateMixin, Res
     final RouteSettings settings = RouteSettings(name: name, arguments: arguments);
     Route<T?>? route = widget.onGenerateRoute!(settings) as Route<T?>?;
     if (route == null && !allowNull) {
-      assert(() {
-        if (widget.onUnknownRoute == null) {
-          throw FlutterError.fromParts(<DiagnosticsNode>[
-            ErrorSummary(
-              'Navigator.onGenerateRoute returned null when requested to build route "$name".',
-            ),
-            ErrorDescription(
-              'The onGenerateRoute callback must never return null, unless an onUnknownRoute '
-              'callback is provided as well.',
-            ),
-            DiagnosticsProperty<NavigatorState>(
-              'The Navigator was',
-              this,
-              style: DiagnosticsTreeStyle.errorProperty,
-            ),
-          ]);
-        }
-        return true;
-      }());
+      assert(
+        widget.onUnknownRoute != null,
+        throw FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary(
+            'Navigator.onGenerateRoute returned null when requested to build route "$name".',
+          ),
+          ErrorDescription(
+            'The onGenerateRoute callback must never return null, unless an onUnknownRoute '
+            'callback is provided as well.',
+          ),
+          DiagnosticsProperty<NavigatorState>(
+            'The Navigator was',
+            this,
+            style: DiagnosticsTreeStyle.errorProperty,
+          ),
+        ]),
+      );
       route = widget.onUnknownRoute!(settings) as Route<T?>?;
-      assert(() {
-        if (route == null) {
-          throw FlutterError.fromParts(<DiagnosticsNode>[
-            ErrorSummary(
-              'Navigator.onUnknownRoute returned null when requested to build route "$name".',
-            ),
-            ErrorDescription('The onUnknownRoute callback must never return null.'),
-            DiagnosticsProperty<NavigatorState>(
-              'The Navigator was',
-              this,
-              style: DiagnosticsTreeStyle.errorProperty,
-            ),
-          ]);
-        }
-        return true;
-      }());
+      assert(
+        route != null,
+        throw FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary(
+            'Navigator.onUnknownRoute returned null when requested to build route "$name".',
+          ),
+          ErrorDescription('The onUnknownRoute callback must never return null.'),
+          DiagnosticsProperty<NavigatorState>(
+            'The Navigator was',
+            this,
+            style: DiagnosticsTreeStyle.errorProperty,
+          ),
+        ]),
+      );
     }
     assert(route != null || allowNull);
     return route;
@@ -5571,11 +5576,16 @@ class NavigatorState extends State<Navigator> with TickerProviderStateMixin, Res
   @optionalTypeArgs
   void pop<T extends Object?>([T? result]) {
     assert(!_debugLocked);
+    final _RouteEntry entry = _history.lastWhere(_RouteEntry.isPresentPredicate);
+    _pop(entry);
+  }
+
+  void _pop<T extends Object?>(_RouteEntry entry, [T? result]) {
+    assert(!_debugLocked);
     assert(() {
       _debugLocked = true;
       return true;
     }());
-    final _RouteEntry entry = _history.lastWhere(_RouteEntry.isPresentPredicate);
     if (entry.pageBased && widget.onPopPage != null) {
       if (widget.onPopPage!(entry.route, result) &&
           entry.currentState.index <= _RouteLifecycle.idle.index) {
@@ -5619,7 +5629,7 @@ class NavigatorState extends State<Navigator> with TickerProviderStateMixin, Res
       if (predicate(candidate.route)) {
         return;
       }
-      pop();
+      _pop(entry);
       candidate = _lastRouteEntryWhereOrNull(_RouteEntry.isPresentPredicate);
     }
   }
@@ -5832,13 +5842,9 @@ class NavigatorState extends State<Navigator> with TickerProviderStateMixin, Res
 
   /// Gets last route entry satisfying the predicate, or null if not found.
   _RouteEntry? _lastRouteEntryWhereOrNull(_RouteEntryPredicate test) {
-    _RouteEntry? result;
-    for (final _RouteEntry element in _history) {
-      if (test(element)) {
-        result = element;
-      }
-    }
-    return result;
+    final index = _history.lastIndexWhere(test);
+    if (index >= 0) return _history[index];
+    return null;
   }
 
   @protected
@@ -5886,7 +5892,7 @@ class NavigatorState extends State<Navigator> with TickerProviderStateMixin, Res
                     clipBehavior: widget.clipBehavior,
                     initialEntries:
                         overlay == null
-                            ? _allRouteOverlayEntries.toList(growable: false)
+                            ? _allRouteOverlayEntries
                             : const <OverlayEntry>[],
                   ),
                 ),
